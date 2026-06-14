@@ -36,7 +36,7 @@ export function SimulationForm() {
         <textarea
           name="question"
           required
-          defaultValue="What if I save ₹1000 more per month?"
+          defaultValue="What if I buy a bike for ₹85000 now vs wait 6 months?"
           className="min-h-24 w-full rounded-md border bg-background px-3 py-2 text-sm"
         />
       </label>

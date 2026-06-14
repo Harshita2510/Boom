@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { orchestrate } from "../../../agents/masterOrchestrator";
 import type { AgentResponse } from "../../../agents/types";
+import { getOrCreateCurrentAppUser } from "@/lib/current-app-user";
+import { connectToDatabase } from "@/lib/mongoose";
 
 type OrchestrateRequest = {
   userId?: string;
@@ -16,8 +18,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing or invalid 'message'" }, { status: 400 });
     }
 
+    await connectToDatabase();
+    const appUser = await getOrCreateCurrentAppUser();
+
     // Call the Master Orchestrator
-    const agentResponse = (await orchestrate(message)) as AgentResponse;
+    const agentResponse = (await orchestrate(message, {
+      appUserId: appUser?._id,
+      channel: "web"
+    })) as AgentResponse;
 
     // Optionally attach userId for client correlation
     const result = { userId: userId || null, agentResponse };

@@ -4,12 +4,22 @@ import { auth } from "@clerk/nextjs/server";
 import {
   AudioLines,
   Brain,
+  ChartNoAxesCombined,
+  CloudSun,
+  FileSearch,
+  Goal,
+  Landmark,
   LayoutDashboard,
+  LibraryBig,
+  Mic,
   Radar,
+  Repeat2,
   ShieldCheck,
+  TrendingUp,
   UserRound,
   UsersRound,
-  MessageCircle
+  MessageCircle,
+  Sparkles
 } from "lucide-react";
 
 import { siteConfig } from "@/config/site";
@@ -21,14 +31,59 @@ const dashboardNavItems = [
     icon: LayoutDashboard
   },
   {
+    title: "AI Plan",
+    href: "/dashboard/action-plan",
+    icon: Sparkles
+  },
+  {
     title: "Financial DNA",
     href: "/dashboard/financial-dna",
     icon: Brain
   },
   {
+    title: "Learn",
+    href: "/dashboard/learn",
+    icon: LibraryBig
+  },
+  {
+    title: "Schemes",
+    href: "/dashboard/schemes",
+    icon: Landmark
+  },
+  {
     title: "Voice Ledger",
     href: "/dashboard/voice-ledger",
     icon: AudioLines
+  },
+  {
+    title: "Voice Mode",
+    href: "/dashboard/voice-mode",
+    icon: Mic
+  },
+  {
+    title: "Budget Coach",
+    href: "/dashboard/budget-coach",
+    icon: ChartNoAxesCombined
+  },
+  {
+    title: "Cash Smoothing",
+    href: "/dashboard/cash-smoothing",
+    icon: CloudSun
+  },
+  {
+    title: "Recurring",
+    href: "/dashboard/recurring",
+    icon: Repeat2
+  },
+  {
+    title: "Goals",
+    href: "/dashboard/goals",
+    icon: Goal
+  },
+  {
+    title: "Investments",
+    href: "/dashboard/investments",
+    icon: TrendingUp
   },
   {
     title: "Community",
@@ -44,6 +99,11 @@ const dashboardNavItems = [
     title: "Scam Shield",
     href: "/dashboard/scam-shield",
     icon: ShieldCheck
+  },
+  {
+    title: "Documents",
+    href: "/dashboard/documents",
+    icon: FileSearch
   },
   {
     title: "Profile",

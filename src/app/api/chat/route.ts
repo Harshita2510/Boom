@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getDatabase } from "../../../lib/mongodb";
 import { orchestrate } from "../../../agents/masterOrchestrator";
 import { ObjectId } from "mongodb";
+import { getOrCreateCurrentAppUser } from "@/lib/current-app-user";
+import { connectToDatabase } from "@/lib/mongoose";
 
 export async function POST(req: Request) {
   try {
@@ -54,8 +56,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Failed to create or find conversation" }, { status: 500 });
     }
 
+    await connectToDatabase();
+    const appUser = await getOrCreateCurrentAppUser();
+
     // Call orchestrator
-    const agentResponse = await orchestrate(String(message));
+    const agentResponse = await orchestrate(String(message), {
+      appUserId: appUser?._id,
+      channel: "chat"
+    });
 
     const agentMsg = {
       role: "agent",

@@ -6,6 +6,10 @@ export type FinancialHealthScoreInput = {
   goalProgress: number;
 };
 
+export type FinancialHealthScoreSnapshot = FinancialHealthScoreResult & {
+  input: FinancialHealthScoreInput;
+};
+
 export type FinancialHealthScoreResult = {
   score: number;
   band: "critical" | "weak" | "stable" | "strong" | "excellent";

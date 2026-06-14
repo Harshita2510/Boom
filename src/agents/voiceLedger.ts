@@ -1,9 +1,37 @@
 import { AgentResponse, Transaction } from "./types";
 import { Intent } from "./intents";
+import type { AgentContext } from "./types";
+import { captureVoiceTransaction } from "@/lib/voice-transaction";
 
 let TRANSACTION_STORE: Transaction[] = [];
 
-export async function handleVoiceLedger(message: string): Promise<AgentResponse<{ transactions: Transaction[] }>> {
+export async function handleVoiceLedger(
+  message: string,
+  context: AgentContext = {}
+): Promise<AgentResponse<{ transactions?: Transaction[] }>> {
+  if (context.appUserId || context.externalUserId) {
+    const result = await captureVoiceTransaction({
+      appUserId: context.appUserId,
+      channelUser: context.externalUserId
+        ? {
+            channel: context.channel ?? "chat",
+            externalUserId: context.externalUserId
+          }
+        : undefined,
+      source: context.channel ?? "chat",
+      text: message
+    });
+
+    return {
+      agent: "voice_ledger",
+      intent: Intent.VOICE_LEDGER,
+      text: result.message,
+      data: {
+        transactions: []
+      }
+    };
+  }
+
   const m = message.toLowerCase();
 
   // simple extraction rules

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="ArthSaathi">
+  <rect width="512" height="512" rx="96" fill="#0f172a"/>
+  <circle cx="256" cy="256" r="172" fill="#10b981" opacity="0.16"/>
+  <path fill="#ffffff" d="M160 132h196v46h-72c18 13 29 33 32 58h40v38h-42c-9 52-51 84-116 88l122 118h-68L132 360v-42h52c44 0 72-15 82-44H160v-38h108c-9-34-38-52-84-52h-24v-52Z"/>
+</svg>

@@ -28,12 +28,10 @@ const uploadedDocumentSchema = new Schema(
       min: 0
     },
     cloudinaryPublicId: {
-      type: String,
-      required: true
+      type: String
     },
     cloudinarySecureUrl: {
-      type: String,
-      required: true
+      type: String
     },
     processingStatus: {
       type: String,

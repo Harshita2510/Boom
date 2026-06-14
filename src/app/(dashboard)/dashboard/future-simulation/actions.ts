@@ -34,6 +34,11 @@ function extractSavingsDelta(question: string) {
   return amountMatch ? Number(amountMatch[1]) : 1000;
 }
 
+function extractWaitMonths(question: string) {
+  const match = question.match(/(?:wait|after|in)\s+(\d{1,2})\s+months?/i);
+  return match ? Number(match[1]) : 6;
+}
+
 function formatRupees(value: number) {
   return new Intl.NumberFormat("en-IN", {
     currency: "INR",
@@ -90,6 +95,7 @@ export async function runFutureSimulation(
     Math.round(monthlyIncome - monthlyExpenseEstimate)
   );
   const monthlySavingsDelta = extractSavingsDelta(question);
+  const waitMonths = extractWaitMonths(question);
   const projectedMonthlySavings = baselineMonthlySavings + monthlySavingsDelta;
   const projectedSixMonthImpact = monthlySavingsDelta * 6;
   const projectedTwelveMonthImpact = monthlySavingsDelta * 12;
@@ -106,7 +112,59 @@ export async function runFutureSimulation(
       .join(" ") ||
     "Community insights suggest that small automatic savings habits improve consistency.";
 
-  const explanation = `Saving ${formatRupees(monthlySavingsDelta)} more each month can add ${formatRupees(projectedTwelveMonthImpact)} in 12 months. Your projected monthly savings becomes ${formatRupees(projectedMonthlySavings)}, before investment returns or inflation.`;
+  const purchaseLanguage = /(buy|purchase|get).*(bike|scooter|phone|laptop|car)|bike|scooter/i.test(question);
+  const scenarioA = purchaseLanguage
+    ? {
+        label: "Scenario A: Buy now",
+        savingsAfterTwelveMonths: Math.max(
+          0,
+          baselineMonthlySavings * 12 - monthlySavingsDelta
+        ),
+        emergencyFundMonths:
+          monthlyExpenseEstimate > 0
+            ? Number(
+                (
+                  Math.max(0, baselineMonthlySavings * 12 - monthlySavingsDelta) /
+                  monthlyExpenseEstimate
+                ).toFixed(1)
+              )
+            : 0,
+        note: `Buying now reduces your 12-month buffer by ${formatRupees(monthlySavingsDelta)}.`
+      }
+    : null;
+  const scenarioB = purchaseLanguage
+    ? {
+        label: `Scenario B: Wait ${waitMonths} months`,
+        savingsAfterTwelveMonths: Math.max(
+          0,
+          baselineMonthlySavings * 12 - Math.max(0, monthlySavingsDelta - baselineMonthlySavings * waitMonths)
+        ),
+        emergencyFundMonths:
+          monthlyExpenseEstimate > 0
+            ? Number(
+                (
+                  Math.max(
+                    0,
+                    baselineMonthlySavings * 12 -
+                      Math.max(0, monthlySavingsDelta - baselineMonthlySavings * waitMonths)
+                  ) / monthlyExpenseEstimate
+                ).toFixed(1)
+              )
+            : 0,
+        note: `Waiting lets you build ${formatRupees(baselineMonthlySavings * waitMonths)} before purchase.`
+      }
+    : null;
+  const recommendation =
+    scenarioA && scenarioB
+      ? scenarioB.savingsAfterTwelveMonths > scenarioA.savingsAfterTwelveMonths
+        ? "Waiting is safer for your future self because it preserves more emergency cover."
+        : "Buying now may be manageable, but avoid taking high-interest debt."
+      : "Increase savings only if your emergency fund and essential expenses stay protected.";
+
+  const explanation =
+    scenarioA && scenarioB
+      ? `${scenarioA.label} leaves ${formatRupees(scenarioA.savingsAfterTwelveMonths)} after 12 months. ${scenarioB.label} leaves ${formatRupees(scenarioB.savingsAfterTwelveMonths)}. ${recommendation}`
+      : `Saving ${formatRupees(monthlySavingsDelta)} more each month can add ${formatRupees(projectedTwelveMonthImpact)} in 12 months. Your projected monthly savings becomes ${formatRupees(projectedMonthlySavings)}, before investment returns or inflation.`;
 
   await FutureSimulationModel.create({
     userId: appUser._id,
@@ -117,6 +175,9 @@ export async function runFutureSimulation(
     projectedSixMonthImpact,
     projectedTwelveMonthImpact,
     projectedEmergencyFundMonths,
+    scenarioA,
+    scenarioB,
+    recommendation,
     communityInsightSummary,
     explanation
   });

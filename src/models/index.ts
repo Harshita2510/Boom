@@ -1,10 +1,12 @@
 export { AlertModel } from "./alert.model";
 export { CommunityPatternModel } from "./community-pattern.model";
+export { CommunityPostModel } from "./community-post.model";
 export { FinancialDNAModel } from "./financial-dna.model";
 export { FinancialDNAOnboardingModel } from "./financial-dna-onboarding.model";
 export { FinancialHealthScoreModel } from "./financial-health-score.model";
 export { FutureSimulationModel } from "./future-simulation.model";
 export { GoalModel } from "./goal.model";
+export { OmbudsmanCaseModel } from "./ombudsman-case.model";
 export { ScamAnalysisModel } from "./scam-analysis.model";
 export { TransactionModel } from "./transaction.model";
 export { UploadedDocumentModel } from "./uploaded-document.model";
@@ -12,11 +14,13 @@ export { UserModel } from "./user.model";
 
 export type { Alert } from "./alert.model";
 export type { CommunityPattern } from "./community-pattern.model";
+export type { CommunityPost } from "./community-post.model";
 export type { FinancialDNA } from "./financial-dna.model";
 export type { FinancialDNAOnboarding } from "./financial-dna-onboarding.model";
 export type { FinancialHealthScore } from "./financial-health-score.model";
 export type { FutureSimulation } from "./future-simulation.model";
 export type { Goal } from "./goal.model";
+export type { OmbudsmanCase } from "./ombudsman-case.model";
 export type { ScamAnalysis } from "./scam-analysis.model";
 export type { Transaction } from "./transaction.model";
 export type { UploadedDocument } from "./uploaded-document.model";

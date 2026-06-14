@@ -1,4 +1,4 @@
-import { BarChart3, TrendingUp } from "lucide-react";
+import { BarChart3, GitCompareArrows, TrendingUp } from "lucide-react";
 
 import { getOrCreateCurrentAppUser } from "@/lib/current-app-user";
 import { connectToDatabase } from "@/lib/mongoose";
@@ -16,6 +16,19 @@ type SimulationSnapshot = {
   projectedSixMonthImpact: number;
   projectedTwelveMonthImpact: number;
   question: string;
+  recommendation?: string;
+  scenarioA?: {
+    emergencyFundMonths?: number;
+    label?: string;
+    note?: string;
+    savingsAfterTwelveMonths?: number;
+  };
+  scenarioB?: {
+    emergencyFundMonths?: number;
+    label?: string;
+    note?: string;
+    savingsAfterTwelveMonths?: number;
+  };
 };
 
 function formatRupees(value: number) {
@@ -101,6 +114,29 @@ export default async function FutureSimulationPage() {
             />
           </div>
 
+          {latestSimulation.scenarioA && latestSimulation.scenarioB ? (
+            <div className="rounded-lg border bg-muted/20 p-4">
+              <div className="flex items-center gap-2">
+                <GitCompareArrows
+                  className="size-5 text-emerald-700"
+                  aria-hidden="true"
+                />
+                <h3 className="font-semibold">Future self comparison</h3>
+              </div>
+
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <ScenarioCard scenario={latestSimulation.scenarioA} />
+                <ScenarioCard scenario={latestSimulation.scenarioB} />
+              </div>
+
+              {latestSimulation.recommendation ? (
+                <p className="mt-4 rounded-md bg-slate-950 p-3 text-sm leading-6 text-white">
+                  {latestSimulation.recommendation}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
           <div className="space-y-3">
             <ProjectionBar
               label="6 months"
@@ -127,6 +163,35 @@ export default async function FutureSimulationPage() {
         </section>
       )}
     </main>
+  );
+}
+
+function ScenarioCard({
+  scenario
+}: {
+  scenario: {
+    emergencyFundMonths?: number;
+    label?: string;
+    note?: string;
+    savingsAfterTwelveMonths?: number;
+  };
+}) {
+  return (
+    <div className="rounded-md border bg-background p-4">
+      <p className="font-semibold">{scenario.label}</p>
+      <p className="mt-3 text-2xl font-semibold">
+        {formatRupees(scenario.savingsAfterTwelveMonths ?? 0)}
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        savings after 12 months
+      </p>
+      <p className="mt-3 text-sm text-muted-foreground">
+        Emergency cover: {scenario.emergencyFundMonths ?? 0} months
+      </p>
+      <p className="mt-3 text-sm leading-6 text-muted-foreground">
+        {scenario.note}
+      </p>
+    </div>
   );
 }
 

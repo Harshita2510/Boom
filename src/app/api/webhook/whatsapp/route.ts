@@ -115,13 +115,25 @@ export async function POST(req: Request) {
 
     for (const message of messages) {
       console.log("[whatsapp webhook] Processing text message:", message);
-      const agentResponse = await orchestrate(message.text);
-      await sendWhatsAppText(message.from, agentResponse.text);
-      console.log("[whatsapp webhook] Sent agent reply:", {
-        to: message.from,
-        agent: agentResponse.agent,
-        intent: agentResponse.intent,
+      const agentResponse = await orchestrate(message.text, {
+        channel: "whatsapp",
+        externalUserId: message.from
       });
+      let reply = agentResponse.text;
+
+      try {
+        await sendWhatsAppText(message.from, reply);
+        console.log("[whatsapp webhook] Sent agent reply:", {
+          to: message.from,
+          agent: agentResponse.agent,
+          intent: agentResponse.intent,
+        });
+      } catch (sendError) {
+        console.error("[whatsapp webhook] Reply send failed:", {
+          to: message.from,
+          error: sendError
+        });
+      }
     }
 
     return new NextResponse(null, { status: 200 });

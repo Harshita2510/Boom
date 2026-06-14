@@ -7,6 +7,12 @@ export type AgentResponse<T = any> = {
   data?: T;
 };
 
+export type AgentContext = {
+  appUserId?: unknown;
+  channel?: "web" | "whatsapp" | "siri_shortcut" | "google_shortcut" | "chat";
+  externalUserId?: string;
+};
+
 export type FinancialDNAProfile = {
   incomeType?: string;
   monthlyIncome?: number;

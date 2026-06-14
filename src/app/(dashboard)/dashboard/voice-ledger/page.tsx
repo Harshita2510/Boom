@@ -1,4 +1,5 @@
 import { currentUser } from "@clerk/nextjs/server";
+import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 
 import { connectToDatabase } from "@/lib/mongoose";
 import { TransactionModel, UserModel } from "@/models";
@@ -47,7 +48,8 @@ export default async function VoiceLedgerPage() {
       <div className="space-y-2">
         <h1 className="text-3xl font-semibold tracking-tight">Voice Ledger</h1>
         <p className="text-muted-foreground">
-          Say something like “spent 250 on food” or “received 50000 salary”.
+          The app shows and corrects transactions. Hands-free capture can later
+          come from Siri, Google Assistant shortcuts, or WhatsApp.
         </p>
       </div>
 
@@ -60,7 +62,41 @@ export default async function VoiceLedgerPage() {
           Transaction history
         </h2>
         {transactions.length ? (
-          <div className="overflow-hidden rounded-lg border">
+          <>
+          <div className="grid gap-3 md:hidden">
+            {transactions.map((transaction) => {
+              const isIncome = transaction.type === "income";
+              const Icon = isIncome ? ArrowDownLeft : ArrowUpRight;
+
+              return (
+                <div key={transaction.id} className="rounded-lg border bg-background p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <div className={`rounded-md p-2 ${isIncome ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}>
+                        <Icon className="size-4" aria-hidden="true" />
+                      </div>
+                      <div>
+                        <p className="font-semibold capitalize">
+                          {transaction.category}
+                        </p>
+                        <p className="mt-1 text-sm leading-5 text-muted-foreground">
+                          {transaction.description}
+                        </p>
+                      </div>
+                    </div>
+                    <p className={`whitespace-nowrap font-semibold ${isIncome ? "text-emerald-700" : "text-slate-950"}`}>
+                      {isIncome ? "+" : "-"}₹{transaction.amount}
+                    </p>
+                  </div>
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    {transaction.transactionDate}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="hidden overflow-hidden rounded-lg border md:block">
             <table className="w-full text-sm">
               <thead className="bg-muted/60 text-left">
                 <tr>
@@ -88,6 +124,7 @@ export default async function VoiceLedgerPage() {
               </tbody>
             </table>
           </div>
+          </>
         ) : (
           <div className="rounded-lg border bg-muted/30 p-5 text-sm text-muted-foreground">
             No transactions yet.

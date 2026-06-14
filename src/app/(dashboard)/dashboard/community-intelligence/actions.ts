@@ -6,13 +6,20 @@ import {
   communityInsightMap,
   isCommunityName
 } from "@/lib/community-intelligence";
+import { getOrCreateCurrentAppUser } from "@/lib/current-app-user";
 import { connectToDatabase } from "@/lib/mongoose";
-import { CommunityPatternModel } from "@/models";
+import { analyzeScamText } from "@/lib/scam-intelligence";
+import { CommunityPatternModel, CommunityPostModel } from "@/models";
 
 export type CommunityJoinState = {
   ok: boolean;
   message: string;
   selectedCommunity?: string;
+};
+
+export type CommunityPostState = {
+  ok: boolean;
+  message: string;
 };
 
 function getCurrentMonthKey() {
@@ -135,5 +142,82 @@ export async function joinCommunity(
     message:
       "Joined anonymously. Only aggregate community patterns were stored.",
     selectedCommunity: community
+  };
+}
+
+export async function createCommunityPost(
+  _previousState: CommunityPostState,
+  formData: FormData
+): Promise<CommunityPostState> {
+  const community = formData.get("community");
+  const postType = String(formData.get("postType") ?? "");
+  const body = String(formData.get("body") ?? "").trim();
+
+  if (!isCommunityName(community)) {
+    return {
+      ok: false,
+      message: "Choose a valid community."
+    };
+  }
+
+  if (!["tip", "question", "warning", "local_insight"].includes(postType)) {
+    return {
+      ok: false,
+      message: "Choose a valid post type."
+    };
+  }
+
+  if (body.length < 10) {
+    return {
+      ok: false,
+      message: "Write at least 10 characters."
+    };
+  }
+
+  if (body.length > 600) {
+    return {
+      ok: false,
+      message: "Keep community posts under 600 characters."
+    };
+  }
+
+  await connectToDatabase();
+  const appUser = await getOrCreateCurrentAppUser();
+
+  if (!appUser) {
+    return {
+      ok: false,
+      message: "Please sign in first."
+    };
+  }
+
+  const analysis = analyzeScamText(body);
+
+  if (analysis.riskLevel === "high") {
+    return {
+      ok: false,
+      message:
+        "This post looks risky and was blocked. Remove links, OTP/PIN requests, payment demands, or suspicious claims."
+    };
+  }
+
+  await CommunityPostModel.create({
+    userId: appUser._id,
+    community,
+    postType,
+    body,
+    safetyStatus: analysis.riskLevel === "medium" ? "flagged" : "safe",
+    riskScore: analysis.riskScore,
+    riskIndicators: analysis.indicators
+  });
+
+  revalidatePath("/dashboard/community-intelligence");
+
+  return {
+    ok: true,
+    message:
+      analysis.riskLevel === "medium"
+        ? "Post added with a safety flag for the community."
+        : "Post added anonymously."
   };
 }

@@ -1,16 +1,27 @@
-import { ShieldCheck, UsersRound } from "lucide-react";
+import { MessageSquareText, ShieldCheck, UsersRound } from "lucide-react";
 
 import { communities } from "@/lib/community-intelligence";
 import { connectToDatabase } from "@/lib/mongoose";
-import { CommunityPatternModel } from "@/models";
+import { CommunityPatternModel, CommunityPostModel } from "@/models";
 
 import { CommunityJoinForm } from "./community-join-form";
+import { CommunityPostForm } from "./community-post-form";
 
 export const dynamic = "force-dynamic";
 
 type CommunityAggregate = {
   segmentName: string;
   sampleSize: number;
+};
+
+type CommunityPostSnapshot = {
+  _id: unknown;
+  body: string;
+  community: string;
+  createdAt: Date;
+  postType: "tip" | "question" | "warning" | "local_insight";
+  riskScore: number;
+  safetyStatus: "safe" | "flagged" | "blocked";
 };
 
 async function getCommunityAggregates() {
@@ -33,8 +44,22 @@ async function getCommunityAggregates() {
   }));
 }
 
+async function getCommunityFeed() {
+  await connectToDatabase();
+
+  return CommunityPostModel.find({
+    safetyStatus: { $in: ["safe", "flagged"] }
+  })
+    .sort({ createdAt: -1 })
+    .limit(12)
+    .lean<CommunityPostSnapshot[]>();
+}
+
 export default async function CommunityIntelligencePage() {
-  const aggregates = await getCommunityAggregates();
+  const [aggregates, feed] = await Promise.all([
+    getCommunityAggregates(),
+    getCommunityFeed()
+  ]);
   const totalAnonymousJoins = aggregates.reduce(
     (sum, item) => sum + item.members,
     0
@@ -91,6 +116,53 @@ export default async function CommunityIntelligencePage() {
       </section>
 
       <CommunityJoinForm />
+
+      <section className="space-y-3">
+        <div className="flex items-center gap-2">
+          <MessageSquareText className="size-5 text-slate-700" aria-hidden="true" />
+          <h2 className="text-xl font-semibold tracking-tight">
+            ArthSaathi Circles feed
+          </h2>
+        </div>
+        <CommunityPostForm />
+
+        <div className="grid gap-3">
+          {feed.length ? (
+            feed.map((post) => (
+              <div key={String(post._id)} className="rounded-lg border bg-background p-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-md bg-muted px-2 py-1 text-xs font-medium">
+                        {post.community}
+                      </span>
+                      <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium capitalize text-slate-700">
+                        {post.postType.replaceAll("_", " ")}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-sm leading-6">{post.body}</p>
+                  </div>
+                  <span
+                    className={`w-fit rounded-md border px-2 py-1 text-xs font-semibold ${
+                      post.safetyStatus === "flagged"
+                        ? "border-amber-200 bg-amber-50 text-amber-900"
+                        : "border-emerald-200 bg-emerald-50 text-emerald-800"
+                    }`}
+                  >
+                    {post.safetyStatus === "flagged"
+                      ? `flagged ${post.riskScore}/100`
+                      : "AI checked"}
+                  </span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="rounded-lg border bg-muted/30 p-5 text-sm text-muted-foreground">
+              No community posts yet. Share the first useful tip or question.
+            </div>
+          )}
+        </div>
+      </section>
 
       <section className="rounded-lg border bg-background p-5">
         <h2 className="text-base font-semibold tracking-tight">

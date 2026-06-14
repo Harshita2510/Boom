@@ -37,6 +37,22 @@ const futureSimulationSchema = new Schema(
       type: Number,
       required: true
     },
+    scenarioA: {
+      label: String,
+      savingsAfterTwelveMonths: Number,
+      emergencyFundMonths: Number,
+      note: String
+    },
+    scenarioB: {
+      label: String,
+      savingsAfterTwelveMonths: Number,
+      emergencyFundMonths: Number,
+      note: String
+    },
+    recommendation: {
+      type: String,
+      trim: true
+    },
     communityInsightSummary: {
       type: String,
       trim: true

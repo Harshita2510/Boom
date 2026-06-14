@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
-import { Mic, Square } from "lucide-react";
+import { Bot, MessageCircle, Mic, Smartphone, Square } from "lucide-react";
 import { useFormStatus } from "react-dom";
 
 import { saveVoiceTransaction, type VoiceLedgerState } from "./actions";
@@ -44,6 +44,8 @@ const initialState: VoiceLedgerState = {
 
 const categoryWords = [
   "food",
+  "groceries",
+  "grocery",
   "rent",
   "salary",
   "shopping",
@@ -53,6 +55,24 @@ const categoryWords = [
   "education",
   "investment",
   "entertainment"
+];
+
+const captureChannels = [
+  {
+    title: "In-app voice",
+    description: "Works after the user opens the app and taps record.",
+    icon: Mic
+  },
+  {
+    title: "Assistant shortcut",
+    description: "Future path for: Hey Siri or Google, tell Boom I spent 500.",
+    icon: Bot
+  },
+  {
+    title: "WhatsApp bot",
+    description: "Practical always-available capture through text or voice note.",
+    icon: MessageCircle
+  }
 ];
 
 function extractTransaction(text: string) {
@@ -80,7 +100,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="h-10 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-60"
+      className="h-11 rounded-md bg-slate-950 px-4 text-sm font-medium text-white disabled:opacity-60"
     >
       {pending ? "Saving..." : "Save transaction"}
     </button>
@@ -131,23 +151,54 @@ export function VoiceLedgerForm() {
 
   return (
     <form action={formAction} className="space-y-5">
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <button
-          type="button"
-          onClick={startListening}
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
-        >
-          <Mic className="size-4" aria-hidden="true" />
-          Record voice
-        </button>
-        <button
-          type="button"
-          disabled={!isListening}
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-md border px-4 text-sm font-medium disabled:opacity-50"
-        >
-          <Square className="size-4" aria-hidden="true" />
-          {isListening ? "Listening..." : "Stopped"}
-        </button>
+      <div className="rounded-lg border bg-slate-950 p-4 text-white">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-sm font-medium text-emerald-300">
+              <Smartphone className="size-4" aria-hidden="true" />
+              Mobile capture demo
+            </div>
+            <p className="text-xl font-semibold tracking-tight">
+              Say: I spent 500 rupees on groceries
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={startListening}
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-white px-4 text-sm font-semibold text-slate-950"
+            >
+              <Mic className="size-4" aria-hidden="true" />
+              Record
+            </button>
+            <button
+              type="button"
+              disabled={!isListening}
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-md border border-white/20 px-4 text-sm font-medium text-white disabled:opacity-50"
+            >
+              <Square className="size-4" aria-hidden="true" />
+              {isListening ? "Listening" : "Ready"}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-3">
+        {captureChannels.map((channel) => {
+          const Icon = channel.icon;
+
+          return (
+            <div key={channel.title} className="rounded-md border bg-muted/30 p-3">
+              <div className="flex items-center gap-2">
+                <Icon className="size-4 text-emerald-700" aria-hidden="true" />
+                <p className="text-sm font-semibold">{channel.title}</p>
+              </div>
+              <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                {channel.description}
+              </p>
+            </div>
+          );
+        })}
       </div>
 
       <label className="block space-y-2">
@@ -157,8 +208,8 @@ export function VoiceLedgerForm() {
           required
           value={transcript}
           onChange={(event) => setTranscript(event.target.value)}
-          placeholder="Example: spent 250 on food"
-          className="min-h-24 w-full rounded-md border bg-background px-3 py-2 text-sm"
+          placeholder="Example: hey boom, I made a transaction of 500 rs on groceries"
+          className="min-h-28 w-full rounded-md border bg-background px-3 py-2 text-base sm:text-sm"
         />
       </label>
 

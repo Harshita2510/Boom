@@ -1,0 +1,48 @@
+{
+  "name": "ArthSaathi",
+  "short_name": "ArthSaathi",
+  "description": "AI money companion for transactions, budgeting, scam checks, goals, and simulations.",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7f7f2",
+  "theme_color": "#0f172a",
+  "categories": ["finance", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Voice Mode",
+      "short_name": "Voice",
+      "description": "Open app voice capture",
+      "url": "/dashboard/voice-mode",
+      "icons": [
+        {
+          "src": "/icons/icon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Scam Shield",
+      "short_name": "Scam",
+      "description": "Check suspicious messages",
+      "url": "/dashboard/scam-shield",
+      "icons": [
+        {
+          "src": "/icons/icon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ]
+}

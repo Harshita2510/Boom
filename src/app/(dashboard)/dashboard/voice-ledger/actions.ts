@@ -4,8 +4,9 @@ import { revalidatePath } from "next/cache";
 import { currentUser } from "@clerk/nextjs/server";
 import { z } from "zod";
 
+import { captureVoiceTransaction } from "@/lib/voice-transaction";
 import { connectToDatabase } from "@/lib/mongoose";
-import { TransactionModel, UserModel } from "@/models";
+import { UserModel } from "@/models";
 
 const transactionSchema = z.object({
   transcript: z.string().min(2, "Please record or type a sentence."),
@@ -74,21 +75,23 @@ export async function saveVoiceTransaction(
     }
   );
 
-  await TransactionModel.create({
-    userId: appUser._id,
-    type: parsed.data.type,
-    amount: parsed.data.amount,
-    category: parsed.data.category,
-    description: parsed.data.transcript,
-    transactionDate: new Date(),
-    source: "voice",
-    paymentMethod: "other"
+  const result = await captureVoiceTransaction({
+    appUserId: appUser._id,
+    source: "web",
+    text: parsed.data.transcript
   });
+
+  if (!result.ok) {
+    return {
+      ok: false,
+      message: result.message
+    };
+  }
 
   revalidatePath("/dashboard/voice-ledger");
 
   return {
     ok: true,
-    message: "Transaction saved."
+    message: result.message
   };
 }

@@ -10,6 +10,7 @@ const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN;
 const ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN;
 const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
 const GRAPH_API_VERSION = process.env.WHATSAPP_GRAPH_API_VERSION || "v22.0";
+const HOST = process.env.WHATSAPP_SERVER_HOST || "0.0.0.0";
 
 app.use(express.json());
 
@@ -70,7 +71,34 @@ app.post("/webhook/whatsapp", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Boom WhatsApp webhook server running on port ${PORT}`);
+const server = app.listen(Number(PORT), HOST, () => {
+  console.log(`Boom WhatsApp webhook server running on http://${HOST}:${PORT}`);
   console.log(`Webhook path: /webhook/whatsapp`);
 });
+
+server.on("error", (err) => {
+  console.error("WhatsApp webhook server failed to start:", err);
+  process.exitCode = 1;
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught exception in WhatsApp webhook server:", err);
+});
+
+process.on("unhandledRejection", (err) => {
+  console.error("Unhandled rejection in WhatsApp webhook server:", err);
+});
+
+process.on("SIGINT", () => {
+  console.log("Stopping WhatsApp webhook server...");
+  server.close(() => process.exit(0));
+});
+
+process.on("SIGTERM", () => {
+  console.log("Stopping WhatsApp webhook server...");
+  server.close(() => process.exit(0));
+});
+
+setInterval(() => {
+  // Keep the standalone webhook process alive in local terminals.
+}, 60_000);
