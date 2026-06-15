@@ -1,6 +1,6 @@
 import { FileText, Scale, Search } from "lucide-react";
 
-import { getOrCreateCurrentAppUser } from "@/lib/current-app-user";
+import { requireFinancialDNA } from "@/lib/financial-dna-gate";
 import { connectToDatabase } from "@/lib/mongoose";
 import { OmbudsmanCaseModel, UploadedDocumentModel } from "@/models";
 
@@ -35,19 +35,15 @@ type DraftSnapshot = {
 
 export default async function DocumentsPage() {
   await connectToDatabase();
-  const appUser = await getOrCreateCurrentAppUser();
-  const documents = appUser
-    ? await UploadedDocumentModel.find({ userId: appUser._id })
-        .sort({ createdAt: -1 })
-        .limit(8)
-        .lean<DocumentSnapshot[]>()
-    : [];
-  const drafts = appUser
-    ? await OmbudsmanCaseModel.find({ userId: appUser._id })
-        .sort({ createdAt: -1 })
-        .limit(5)
-        .lean<DraftSnapshot[]>()
-    : [];
+  const { appUser } = await requireFinancialDNA();
+  const documents = await UploadedDocumentModel.find({ userId: appUser._id })
+    .sort({ createdAt: -1 })
+    .limit(8)
+    .lean<DocumentSnapshot[]>();
+  const drafts = await OmbudsmanCaseModel.find({ userId: appUser._id })
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .lean<DraftSnapshot[]>();
 
   return (
     <main className="space-y-6">

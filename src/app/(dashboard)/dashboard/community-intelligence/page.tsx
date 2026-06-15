@@ -1,6 +1,7 @@
 import { MessageSquareText, ShieldCheck, UsersRound } from "lucide-react";
 
 import { communities } from "@/lib/community-intelligence";
+import { requireFinancialDNA } from "@/lib/financial-dna-gate";
 import { connectToDatabase } from "@/lib/mongoose";
 import { CommunityPatternModel, CommunityPostModel } from "@/models";
 
@@ -56,6 +57,7 @@ async function getCommunityFeed() {
 }
 
 export default async function CommunityIntelligencePage() {
+  await requireFinancialDNA();
   const [aggregates, feed] = await Promise.all([
     getCommunityAggregates(),
     getCommunityFeed()

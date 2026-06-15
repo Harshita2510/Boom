@@ -4,7 +4,7 @@ import {
   formatCashSmoothingRupees,
   getCashSmoothingResult
 } from "@/lib/cash-smoothing";
-import { getOrCreateCurrentAppUser } from "@/lib/current-app-user";
+import { requireFinancialDNA } from "@/lib/financial-dna-gate";
 import { connectToDatabase } from "@/lib/mongoose";
 
 export const dynamic = "force-dynamic";
@@ -17,16 +17,8 @@ const riskTone = {
 
 export default async function CashSmoothingPage() {
   await connectToDatabase();
-  const appUser = await getOrCreateCurrentAppUser();
-  const result = appUser
-    ? await getCashSmoothingResult(appUser._id)
-    : {
-        actions: [],
-        monthlyShockBuffer: 0,
-        riskLevel: "low" as const,
-        seasonalSignals: ["Sign in to calculate cash smoothing."],
-        summary: "Sign in to calculate cash smoothing."
-      };
+  const { appUser } = await requireFinancialDNA();
+  const result = await getCashSmoothingResult(appUser._id);
 
   return (
     <main className="space-y-6">

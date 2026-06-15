@@ -54,14 +54,18 @@ export async function getCashSmoothingResult(
     GoalModel.find({ userId, status: "active" }).lean<GoalSnapshot[]>()
   ]);
   const income = financialDNA?.monthlyIncome || 0;
+  const expenseTransactions = transactions.filter(
+    (transaction) => transaction.type === "expense"
+  );
+  const incomeTransactions = transactions.filter(
+    (transaction) => transaction.type === "income"
+  );
   const monthlyExpenses =
-    transactions
-      .filter((transaction) => transaction.type === "expense")
-      .reduce((sum, transaction) => sum + transaction.amount, 0) / 6 || income * 0.65;
+    expenseTransactions.reduce((sum, transaction) => sum + transaction.amount, 0) /
+    6;
   const recentIncome =
-    transactions
-      .filter((transaction) => transaction.type === "income")
-      .reduce((sum, transaction) => sum + transaction.amount, 0) / 6 || income;
+    incomeTransactions.reduce((sum, transaction) => sum + transaction.amount, 0) /
+      6 || income;
   const incomeVolatile =
     financialDNA?.incomeStability !== "high" ||
     /(business|freelance|farmer|gig|other)/i.test(
@@ -72,6 +76,10 @@ export async function getCashSmoothingResult(
 
   if (incomeVolatile) {
     seasonalSignals.push("Income may vary across months or seasons.");
+  }
+
+  if (!expenseTransactions.length) {
+    seasonalSignals.push("Add expense transactions to calculate real shock pressure.");
   }
 
   if (monthlyExpenses > recentIncome * 0.75) {

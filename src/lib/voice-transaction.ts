@@ -1,5 +1,5 @@
 import { connectToDatabase } from "@/lib/mongoose";
-import { TransactionModel, UserModel } from "@/models";
+import { FinancialDNAModel, TransactionModel, UserModel } from "@/models";
 import {
   parseVoiceTransaction,
   type ParsedVoiceTransaction
@@ -106,6 +106,16 @@ export async function captureVoiceTransaction(input: {
     return {
       ok: false as const,
       message: "Please sign in first.",
+      parsed
+    };
+  }
+
+  const financialDNA = await FinancialDNAModel.exists({ userId: appUser });
+
+  if (!financialDNA) {
+    return {
+      ok: false as const,
+      message: "Please complete Financial DNA before recording transactions.",
       parsed
     };
   }

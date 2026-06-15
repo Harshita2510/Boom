@@ -84,11 +84,20 @@ export async function runFutureSimulation(
       .lean<CommunityPatternSnapshot[]>()
   ]);
 
-  const monthlyIncome = financialDNA?.monthlyIncome ?? 50000;
+  if (!financialDNA) {
+    return {
+      ok: false,
+      message: "Complete Financial DNA before running a simulation."
+    };
+  }
+
+  const monthlyIncome = financialDNA.monthlyIncome;
+  const expenseTransactions = transactions.filter(
+    (transaction) => transaction.type === "expense"
+  );
   const monthlyExpenseEstimate =
-    transactions
-      .filter((transaction) => transaction.type === "expense")
-      .reduce((sum, transaction) => sum + transaction.amount, 0) / 3 || monthlyIncome * 0.65;
+    expenseTransactions.reduce((sum, transaction) => sum + transaction.amount, 0) /
+    3;
 
   const baselineMonthlySavings = Math.max(
     0,
@@ -164,7 +173,11 @@ export async function runFutureSimulation(
   const explanation =
     scenarioA && scenarioB
       ? `${scenarioA.label} leaves ${formatRupees(scenarioA.savingsAfterTwelveMonths)} after 12 months. ${scenarioB.label} leaves ${formatRupees(scenarioB.savingsAfterTwelveMonths)}. ${recommendation}`
-      : `Saving ${formatRupees(monthlySavingsDelta)} more each month can add ${formatRupees(projectedTwelveMonthImpact)} in 12 months. Your projected monthly savings becomes ${formatRupees(projectedMonthlySavings)}, before investment returns or inflation.`;
+      : `Saving ${formatRupees(monthlySavingsDelta)} more each month can add ${formatRupees(projectedTwelveMonthImpact)} in 12 months. Your projected monthly savings becomes ${formatRupees(projectedMonthlySavings)}, before investment returns or inflation.${
+          expenseTransactions.length
+            ? ""
+            : " Add expense transactions to calculate emergency-cover impact accurately."
+        }`;
 
   await FutureSimulationModel.create({
     userId: appUser._id,

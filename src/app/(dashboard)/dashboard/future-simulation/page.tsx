@@ -1,6 +1,6 @@
 import { BarChart3, GitCompareArrows, TrendingUp } from "lucide-react";
 
-import { getOrCreateCurrentAppUser } from "@/lib/current-app-user";
+import { requireFinancialDNA } from "@/lib/financial-dna-gate";
 import { connectToDatabase } from "@/lib/mongoose";
 import { FinancialDNAModel, FutureSimulationModel, TransactionModel } from "@/models";
 
@@ -41,19 +41,17 @@ function formatRupees(value: number) {
 
 export default async function FutureSimulationPage() {
   await connectToDatabase();
-  const appUser = await getOrCreateCurrentAppUser();
+  const { appUser } = await requireFinancialDNA();
 
-  const financialDNA = appUser
-    ? await FinancialDNAModel.exists({ userId: appUser._id })
-    : null;
-  const transactionCount = appUser
-    ? await TransactionModel.countDocuments({ userId: appUser._id })
-    : 0;
-  const latestSimulation = appUser
-    ? await FutureSimulationModel.findOne({ userId: appUser._id })
-        .sort({ createdAt: -1 })
-        .lean<SimulationSnapshot | null>()
-    : null;
+  const financialDNA = await FinancialDNAModel.exists({ userId: appUser._id });
+  const transactionCount = await TransactionModel.countDocuments({
+    userId: appUser._id
+  });
+  const latestSimulation = await FutureSimulationModel.findOne({
+    userId: appUser._id
+  })
+    .sort({ createdAt: -1 })
+    .lean<SimulationSnapshot | null>();
 
   const maxBar =
     latestSimulation?.projectedTwelveMonthImpact &&
@@ -74,7 +72,7 @@ export default async function FutureSimulationPage() {
       </div>
 
       <section className="grid gap-4 md:grid-cols-3">
-        <InputSignal label="Financial DNA" value={financialDNA ? "Connected" : "Demo baseline"} />
+        <InputSignal label="Financial DNA" value={financialDNA ? "Connected" : "Required"} />
         <InputSignal label="Transactions" value={`${transactionCount} records`} />
         <InputSignal label="Community Insights" value="Anonymous patterns" />
       </section>

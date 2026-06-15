@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { buildActionPlan } from "@/lib/action-plan";
-import { getOrCreateCurrentAppUser } from "@/lib/current-app-user";
+import { requireFinancialDNA } from "@/lib/financial-dna-gate";
 import { connectToDatabase } from "@/lib/mongoose";
 
 export const dynamic = "force-dynamic";
@@ -39,18 +39,7 @@ const tagClass = {
 
 export default async function ActionPlanPage() {
   await connectToDatabase();
-  const appUser = await getOrCreateCurrentAppUser();
-
-  if (!appUser?._id) {
-    return (
-      <main className="space-y-4">
-        <h1 className="text-3xl font-semibold tracking-tight">AI Action Plan</h1>
-        <p className="text-muted-foreground">
-          Sign in and complete your profile to generate a personal action plan.
-        </p>
-      </main>
-    );
-  }
+  const { appUser } = await requireFinancialDNA();
 
   const plan = await buildActionPlan(appUser._id);
 

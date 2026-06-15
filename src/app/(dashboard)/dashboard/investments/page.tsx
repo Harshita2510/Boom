@@ -1,6 +1,6 @@
 import { AlertTriangle, Banknote, TrendingUp } from "lucide-react";
 
-import { getOrCreateCurrentAppUser } from "@/lib/current-app-user";
+import { requireFinancialDNA } from "@/lib/financial-dna-gate";
 import { getInvestmentGuidance } from "@/lib/investment-guidance";
 import { connectToDatabase } from "@/lib/mongoose";
 
@@ -20,8 +20,8 @@ const riskTone = {
 
 export default async function InvestmentsPage() {
   await connectToDatabase();
-  const appUser = await getOrCreateCurrentAppUser();
-  const suggestions = appUser ? await getInvestmentGuidance(appUser._id) : [];
+  const { appUser } = await requireFinancialDNA();
+  const suggestions = await getInvestmentGuidance(appUser._id);
 
   return (
     <main className="space-y-6">

@@ -30,13 +30,6 @@ type SpeechRecognitionEvent = {
   };
 };
 
-declare global {
-  interface Window {
-    SpeechRecognition?: SpeechRecognitionConstructor;
-    webkitSpeechRecognition?: SpeechRecognitionConstructor;
-  }
-}
-
 const initialState: VoiceLedgerState = {
   ok: false,
   message: ""
@@ -117,8 +110,12 @@ export function VoiceLedgerForm() {
   const extracted = useMemo(() => extractTransaction(transcript), [transcript]);
 
   function startListening() {
+    const speechWindow = window as Window & {
+      SpeechRecognition?: SpeechRecognitionConstructor;
+      webkitSpeechRecognition?: SpeechRecognitionConstructor;
+    };
     const SpeechRecognitionApi =
-      window.SpeechRecognition ?? window.webkitSpeechRecognition;
+      speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
 
     if (!SpeechRecognitionApi) {
       setTranscript(

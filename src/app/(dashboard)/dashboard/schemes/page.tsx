@@ -1,6 +1,6 @@
 import { Landmark, ShieldAlert } from "lucide-react";
 
-import { getOrCreateCurrentAppUser } from "@/lib/current-app-user";
+import { requireFinancialDNA } from "@/lib/financial-dna-gate";
 import { recommendGovernmentSchemes } from "@/lib/government-schemes";
 import { connectToDatabase } from "@/lib/mongoose";
 import { FinancialDNAModel } from "@/models";
@@ -23,10 +23,10 @@ const priorityTone = {
 
 export default async function SchemesPage() {
   await connectToDatabase();
-  const appUser = await getOrCreateCurrentAppUser();
-  const profile = appUser
-    ? await FinancialDNAModel.findOne({ userId: appUser._id }).lean<FinancialDNASnapshot | null>()
-    : null;
+  const { appUser } = await requireFinancialDNA();
+  const profile = await FinancialDNAModel.findOne({
+    userId: appUser._id
+  }).lean<FinancialDNASnapshot | null>();
   const recommendations = recommendGovernmentSchemes({
     dependents: profile?.dependents,
     financialGoals: profile?.financialGoals,

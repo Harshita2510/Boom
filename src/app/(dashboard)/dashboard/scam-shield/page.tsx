@@ -1,6 +1,6 @@
 import { AlertTriangle, ShieldCheck } from "lucide-react";
 
-import { getOrCreateCurrentAppUser } from "@/lib/current-app-user";
+import { requireFinancialDNA } from "@/lib/financial-dna-gate";
 import { connectToDatabase } from "@/lib/mongoose";
 import { ScamAnalysisModel } from "@/models";
 
@@ -16,13 +16,11 @@ const riskTone = {
 
 export default async function ScamShieldPage() {
   await connectToDatabase();
-  const appUser = await getOrCreateCurrentAppUser();
-  const recentAnalyses = appUser
-    ? await ScamAnalysisModel.find({ userId: appUser._id })
-        .sort({ createdAt: -1 })
-        .limit(5)
-        .lean()
-    : [];
+  const { appUser } = await requireFinancialDNA();
+  const recentAnalyses = await ScamAnalysisModel.find({ userId: appUser._id })
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .lean();
 
   const latest = recentAnalyses[0];
 

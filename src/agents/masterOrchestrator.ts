@@ -16,6 +16,10 @@ export async function orchestrate(
       const mod = await import("./budgetCoach");
       return await mod.handleBudgetCoach(message, context);
     }
+    case Intent.CASH_SMOOTHING: {
+      const mod = await import("./cashSmoothingAgent");
+      return await mod.handleCashSmoothingAgent(message, context);
+    }
     case Intent.FINANCIAL_EDUCATION: {
       const mod = await import("./financialEducation");
       return await mod.handleFinancialEducation(message, context);
@@ -28,9 +32,17 @@ export async function orchestrate(
       const mod = await import("./governmentSchemes");
       return await mod.handleGovernmentSchemes(message, context);
     }
+    case Intent.GOALS: {
+      const mod = await import("./goalAgent");
+      return await mod.handleGoalAgent(message, context);
+    }
     case Intent.INVESTMENT_AGENT: {
       const mod = await import("./investmentAgent");
       return await mod.handleInvestmentAgent(message, context);
+    }
+    case Intent.RECURRING_EXPENSES: {
+      const mod = await import("./recurringAgent");
+      return await mod.handleRecurringAgent(message, context);
     }
     case Intent.VOICE_LEDGER: {
       const mod = await import("./voiceLedger");
@@ -38,7 +50,7 @@ export async function orchestrate(
     }
     case Intent.FUTURE_SIMULATION: {
       const mod = await import("./futureSimulation");
-      return await mod.handleFutureSimulation(message);
+      return await mod.handleFutureSimulation(message, context);
     }
     case Intent.COMMUNITY_INTELLIGENCE: {
       const mod = await import("./communityIntelligence");

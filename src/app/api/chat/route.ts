@@ -4,6 +4,7 @@ import { orchestrate } from "../../../agents/masterOrchestrator";
 import { ObjectId } from "mongodb";
 import { getOrCreateCurrentAppUser } from "@/lib/current-app-user";
 import { connectToDatabase } from "@/lib/mongoose";
+import { FinancialDNAModel } from "@/models";
 
 export async function POST(req: Request) {
   try {
@@ -59,9 +60,30 @@ export async function POST(req: Request) {
     await connectToDatabase();
     const appUser = await getOrCreateCurrentAppUser();
 
+    if (!appUser) {
+      return NextResponse.json(
+        { error: "Please sign in before using chat." },
+        { status: 401 }
+      );
+    }
+
+    const financialDNA = await FinancialDNAModel.exists({
+      userId: appUser._id
+    });
+
+    if (!financialDNA) {
+      return NextResponse.json(
+        {
+          error:
+            "Complete Financial DNA first. Then ArthSaathi can unlock the rest of the assistant."
+        },
+        { status: 403 }
+      );
+    }
+
     // Call orchestrator
     const agentResponse = await orchestrate(String(message), {
-      appUserId: appUser?._id,
+      appUserId: appUser._id,
       channel: "chat"
     });
 

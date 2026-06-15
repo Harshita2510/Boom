@@ -3,6 +3,7 @@ import { orchestrate } from "../../../agents/masterOrchestrator";
 import type { AgentResponse } from "../../../agents/types";
 import { getOrCreateCurrentAppUser } from "@/lib/current-app-user";
 import { connectToDatabase } from "@/lib/mongoose";
+import { FinancialDNAModel } from "@/models";
 
 type OrchestrateRequest = {
   userId?: string;
@@ -21,9 +22,24 @@ export async function POST(req: Request) {
     await connectToDatabase();
     const appUser = await getOrCreateCurrentAppUser();
 
+    if (!appUser) {
+      return NextResponse.json({ error: "Please sign in first." }, { status: 401 });
+    }
+
+    const financialDNA = await FinancialDNAModel.exists({
+      userId: appUser._id
+    });
+
+    if (!financialDNA) {
+      return NextResponse.json(
+        { error: "Complete Financial DNA before using other features." },
+        { status: 403 }
+      );
+    }
+
     // Call the Master Orchestrator
     const agentResponse = (await orchestrate(message, {
-      appUserId: appUser?._id,
+      appUserId: appUser._id,
       channel: "web"
     })) as AgentResponse;
 

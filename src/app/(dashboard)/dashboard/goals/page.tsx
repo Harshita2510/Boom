@@ -5,7 +5,7 @@ import {
   getGoalRoadmaps,
   type GoalRoadmap
 } from "@/lib/goal-roadmap";
-import { getOrCreateCurrentAppUser } from "@/lib/current-app-user";
+import { requireFinancialDNA } from "@/lib/financial-dna-gate";
 import { connectToDatabase } from "@/lib/mongoose";
 
 import { GoalForm } from "./goal-form";
@@ -30,8 +30,8 @@ function formatDate(date?: Date) {
 
 export default async function GoalsPage() {
   await connectToDatabase();
-  const appUser = await getOrCreateCurrentAppUser();
-  const roadmaps = appUser ? await getGoalRoadmaps(appUser._id) : [];
+  const { appUser } = await requireFinancialDNA();
+  const roadmaps = await getGoalRoadmaps(appUser._id);
 
   return (
     <main className="space-y-6">

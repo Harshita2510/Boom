@@ -1,8 +1,12 @@
+import { requireFinancialDNA } from "@/lib/financial-dna-gate";
+
 import { VoiceModeClient } from "./voice-mode-client";
 
 export const dynamic = "force-dynamic";
 
-export default function VoiceModePage() {
+export default async function VoiceModePage() {
+  await requireFinancialDNA();
+
   return (
     <main className="space-y-6">
       <div className="space-y-2">

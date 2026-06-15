@@ -6,7 +6,7 @@ import {
   type LucideIcon
 } from "lucide-react";
 
-import { getOrCreateCurrentAppUser } from "@/lib/current-app-user";
+import { requireFinancialDNA } from "@/lib/financial-dna-gate";
 import { connectToDatabase } from "@/lib/mongoose";
 import {
   formatRecurringRupees,
@@ -23,16 +23,8 @@ const confidenceTone = {
 
 export default async function RecurringExpensesPage() {
   await connectToDatabase();
-  const appUser = await getOrCreateCurrentAppUser();
-  const result = appUser
-    ? await getRecurringExpenseResult(appUser._id)
-    : {
-        annualEstimate: 0,
-        items: [],
-        monthlyEstimate: 0,
-        possibleYearlySavings: 0,
-        summary: "Sign in to detect recurring expenses."
-      };
+  const { appUser } = await requireFinancialDNA();
+  const result = await getRecurringExpenseResult(appUser._id);
 
   return (
     <main className="space-y-6">

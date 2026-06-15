@@ -3,7 +3,6 @@ import { currentUser } from "@clerk/nextjs/server";
 import { connectToDatabase } from "@/lib/mongoose";
 import { FinancialDNAModel, UserModel } from "@/models";
 
-import { FinancialDNAForm } from "./financial-dna-form";
 import { OnboardingChat } from "./onboarding-chat";
 
 export const dynamic = "force-dynamic";
@@ -30,10 +29,6 @@ export default async function FinancialDNAPage() {
         <h1 className="text-3xl font-semibold tracking-tight">
           Financial DNA
         </h1>
-        <p className="text-muted-foreground">
-          Answer a few questions. Boom will save them and create your money
-          profile.
-        </p>
       </div>
 
       {existingSummary ? (
@@ -43,10 +38,10 @@ export default async function FinancialDNAPage() {
         </section>
       ) : null}
 
-      <section className="rounded-lg border bg-background p-5">
-        {/* Render conversational onboarding chat UI */}
-        <OnboardingChat userId={clerkUser?.id} />
-      </section>
+      <OnboardingChat
+        initialSummary={existingSummary}
+        userId={clerkUser?.id}
+      />
     </main>
   );
 }

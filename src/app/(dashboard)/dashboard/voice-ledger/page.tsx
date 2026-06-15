@@ -1,15 +1,16 @@
-import { currentUser } from "@clerk/nextjs/server";
 import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 
+import { requireFinancialDNA } from "@/lib/financial-dna-gate";
 import { connectToDatabase } from "@/lib/mongoose";
-import { TransactionModel, UserModel } from "@/models";
+import { TransactionModel } from "@/models";
 
 import { VoiceLedgerForm } from "./voice-ledger-form";
 
 export const dynamic = "force-dynamic";
 
 export default async function VoiceLedgerPage() {
-  const clerkUser = await currentUser();
+  await connectToDatabase();
+  const { appUser } = await requireFinancialDNA();
   let transactions: Array<{
     id: string;
     amount: number;
@@ -19,29 +20,22 @@ export default async function VoiceLedgerPage() {
     transactionDate: string;
   }> = [];
 
-  if (clerkUser) {
-    await connectToDatabase();
-    const appUser = await UserModel.findOne({ clerkId: clerkUser.id });
+  const rows = await TransactionModel.find({ userId: appUser._id })
+    .sort({ transactionDate: -1 })
+    .limit(10)
+    .lean();
 
-    if (appUser) {
-      const rows = await TransactionModel.find({ userId: appUser._id })
-        .sort({ transactionDate: -1 })
-        .limit(10)
-        .lean();
-
-      transactions = rows.map((transaction) => ({
-        id: String(transaction._id),
-        amount: transaction.amount,
-        type: transaction.type,
-        category: transaction.category,
-        description: transaction.description,
-        transactionDate: new Intl.DateTimeFormat("en-IN", {
-          dateStyle: "medium",
-          timeStyle: "short"
-        }).format(transaction.transactionDate)
-      }));
-    }
-  }
+  transactions = rows.map((transaction) => ({
+    id: String(transaction._id),
+    amount: transaction.amount,
+    type: transaction.type,
+    category: transaction.category,
+    description: transaction.description,
+    transactionDate: new Intl.DateTimeFormat("en-IN", {
+      dateStyle: "medium",
+      timeStyle: "short"
+    }).format(transaction.transactionDate)
+  }));
 
   return (
     <main className="space-y-6">

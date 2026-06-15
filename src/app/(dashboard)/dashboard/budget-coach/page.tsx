@@ -12,7 +12,7 @@ import {
   formatBudgetRupees,
   getBudgetCoachResult
 } from "@/lib/budget-coach";
-import { getOrCreateCurrentAppUser } from "@/lib/current-app-user";
+import { requireFinancialDNA } from "@/lib/financial-dna-gate";
 import { connectToDatabase } from "@/lib/mongoose";
 
 export const dynamic = "force-dynamic";
@@ -25,23 +25,8 @@ const severityTone = {
 
 export default async function BudgetCoachPage() {
   await connectToDatabase();
-  const appUser = await getOrCreateCurrentAppUser();
-  const result = appUser ? await getBudgetCoachResult(appUser._id) : null;
-
-  if (!appUser || !result) {
-    return (
-      <main className="space-y-6">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight">
-            AI Spending Coach
-          </h1>
-          <p className="text-muted-foreground">
-            Sign in and add a few transactions to unlock spending insights.
-          </p>
-        </div>
-      </main>
-    );
-  }
+  const { appUser } = await requireFinancialDNA();
+  const result = await getBudgetCoachResult(appUser._id);
 
   return (
     <main className="space-y-6">

@@ -1,116 +1,10 @@
 import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
-import {
-  AudioLines,
-  Brain,
-  ChartNoAxesCombined,
-  CloudSun,
-  FileSearch,
-  Goal,
-  Landmark,
-  LayoutDashboard,
-  LibraryBig,
-  Mic,
-  Radar,
-  Repeat2,
-  ShieldCheck,
-  TrendingUp,
-  UserRound,
-  UsersRound,
-  MessageCircle,
-  Sparkles
-} from "lucide-react";
+import { MessageCircle } from "lucide-react";
 
 import { siteConfig } from "@/config/site";
-
-const dashboardNavItems = [
-  {
-    title: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard
-  },
-  {
-    title: "AI Plan",
-    href: "/dashboard/action-plan",
-    icon: Sparkles
-  },
-  {
-    title: "Financial DNA",
-    href: "/dashboard/financial-dna",
-    icon: Brain
-  },
-  {
-    title: "Learn",
-    href: "/dashboard/learn",
-    icon: LibraryBig
-  },
-  {
-    title: "Schemes",
-    href: "/dashboard/schemes",
-    icon: Landmark
-  },
-  {
-    title: "Voice Ledger",
-    href: "/dashboard/voice-ledger",
-    icon: AudioLines
-  },
-  {
-    title: "Voice Mode",
-    href: "/dashboard/voice-mode",
-    icon: Mic
-  },
-  {
-    title: "Budget Coach",
-    href: "/dashboard/budget-coach",
-    icon: ChartNoAxesCombined
-  },
-  {
-    title: "Cash Smoothing",
-    href: "/dashboard/cash-smoothing",
-    icon: CloudSun
-  },
-  {
-    title: "Recurring",
-    href: "/dashboard/recurring",
-    icon: Repeat2
-  },
-  {
-    title: "Goals",
-    href: "/dashboard/goals",
-    icon: Goal
-  },
-  {
-    title: "Investments",
-    href: "/dashboard/investments",
-    icon: TrendingUp
-  },
-  {
-    title: "Community",
-    href: "/dashboard/community-intelligence",
-    icon: UsersRound
-  },
-  {
-    title: "Simulation",
-    href: "/dashboard/future-simulation",
-    icon: Radar
-  },
-  {
-    title: "Scam Shield",
-    href: "/dashboard/scam-shield",
-    icon: ShieldCheck
-  },
-  {
-    title: "Documents",
-    href: "/dashboard/documents",
-    icon: FileSearch
-  },
-  {
-    title: "Profile",
-    href: "/dashboard/profile",
-    icon: UserRound
-  }
-];
+import { DashboardNav } from "./dashboard-nav";
 
 export const dynamic = "force-dynamic";
 
@@ -141,22 +35,7 @@ export default async function DashboardLayout({
 
       <div className="container grid gap-6 py-6 md:grid-cols-[220px_1fr]">
         <aside className="rounded-lg border bg-background p-2 md:sticky md:top-20 md:h-fit">
-          <nav className="flex gap-1 md:flex-col">
-            {dashboardNavItems.map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="inline-flex h-10 items-center gap-2 rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-                >
-                  <Icon className="size-4" aria-hidden="true" />
-                  {item.title}
-                </Link>
-              );
-            })}
-          </nav>
+          <DashboardNav />
         </aside>
 
         <div className="min-w-0 rounded-lg border bg-background p-6">

@@ -4,7 +4,7 @@ import {
   createFinancialLesson,
   listFinancialLessons
 } from "@/lib/financial-education";
-import { getOrCreateCurrentAppUser } from "@/lib/current-app-user";
+import { requireFinancialDNA } from "@/lib/financial-dna-gate";
 import { connectToDatabase } from "@/lib/mongoose";
 import { FinancialDNAModel } from "@/models";
 
@@ -17,10 +17,10 @@ type FinancialDNASnapshot = {
 
 export default async function LearnPage() {
   await connectToDatabase();
-  const appUser = await getOrCreateCurrentAppUser();
-  const profile = appUser
-    ? await FinancialDNAModel.findOne({ userId: appUser._id }).lean<FinancialDNASnapshot | null>()
-    : null;
+  const { appUser } = await requireFinancialDNA();
+  const profile = await FinancialDNAModel.findOne({
+    userId: appUser._id
+  }).lean<FinancialDNASnapshot | null>();
   const featuredLesson = createFinancialLesson("Explain UPI", {
     incomeType: profile?.incomeType,
     occupation: profile?.occupation
