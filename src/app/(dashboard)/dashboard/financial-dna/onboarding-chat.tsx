@@ -253,8 +253,8 @@ export function OnboardingChat({
         </div>
       ) : null}
 
-      <section className="flex min-h-[560px] flex-col">
-          <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto p-4">
+      <section className="flex min-h-[420px] flex-col sm:min-h-[560px]">
+          <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto p-3 sm:p-4">
             {messages.map((message, index) => {
               const isUser = message.role === "user";
 
@@ -264,7 +264,7 @@ export function OnboardingChat({
                   className={`flex ${isUser ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`max-w-[88%] rounded-lg px-4 py-3 text-sm leading-6 shadow-sm md:max-w-[74%] ${
+                    className={`max-w-[94%] rounded-lg px-3 py-3 text-sm leading-6 shadow-sm sm:max-w-[88%] sm:px-4 md:max-w-[74%] ${
                       isUser
                         ? "bg-slate-950 text-white"
                         : "border bg-white text-slate-950"
@@ -286,7 +286,7 @@ export function OnboardingChat({
             ) : null}
           </div>
 
-          <div className="border-t bg-white p-3">
+          <div className="border-t bg-white p-2 sm:p-3">
             <div className="flex gap-2">
               <input
                 value={input}

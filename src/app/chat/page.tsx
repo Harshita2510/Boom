@@ -181,7 +181,7 @@ export default function ChatPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col bg-[#f7f7f2]">
+    <main className="flex min-h-[100svh] flex-col bg-[#f7f7f2]">
       <header className="sticky top-0 z-30 border-b bg-white/95 backdrop-blur">
         <div className="container flex h-16 items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -208,7 +208,7 @@ export default function ChatPage() {
         </div>
       </header>
 
-      <section className="container grid min-h-0 flex-1 gap-4 py-4 lg:grid-cols-[280px_1fr]">
+      <section className="container grid min-h-0 flex-1 gap-4 py-3 sm:py-4 lg:grid-cols-[280px_1fr]">
         <aside className="hidden rounded-lg border bg-white p-4 lg:block">
           <div className="flex items-center gap-2">
             <Bot className="size-5 text-slate-700" aria-hidden="true" />
@@ -238,10 +238,10 @@ export default function ChatPage() {
           </div>
         </aside>
 
-        <section className="flex min-h-[calc(100vh-7rem)] flex-col overflow-hidden rounded-lg border bg-white">
+        <section className="flex min-h-[calc(100svh-6.5rem)] flex-col overflow-hidden rounded-lg border bg-white sm:min-h-[calc(100svh-7rem)]">
           <div
             ref={containerRef}
-            className="flex-1 space-y-4 overflow-y-auto p-4"
+            className="flex-1 space-y-4 overflow-y-auto p-3 sm:p-4"
           >
             {messages.map((msg, index) => {
               const isUser = msg.role === "user";
@@ -252,7 +252,7 @@ export default function ChatPage() {
                   className={`flex ${isUser ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`max-w-[88%] rounded-lg p-4 shadow-sm sm:max-w-[72%] ${
+                    className={`max-w-[94%] rounded-lg p-3 shadow-sm sm:max-w-[72%] sm:p-4 ${
                       isUser
                         ? "bg-slate-950 text-white"
                         : "border bg-background text-slate-950"
@@ -290,7 +290,7 @@ export default function ChatPage() {
             ) : null}
           </div>
 
-          <div className="border-t bg-white p-3">
+          <div className="border-t bg-white p-2 sm:p-3">
             <div className="mb-3 flex gap-2 overflow-x-auto lg:hidden">
               {quickPrompts.map((prompt) => (
                 <button

@@ -42,19 +42,19 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#f7f7f2] text-slate-950">
       <header className="fixed inset-x-0 top-0 z-40 border-b bg-background/90 backdrop-blur">
-        <div className="container flex h-16 items-center justify-between">
+        <div className="container flex h-16 items-center justify-between gap-3">
           <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
             <span className="inline-flex size-8 items-center justify-center rounded-md bg-slate-950 text-white">
               <IndianRupee className="size-4" aria-hidden="true" />
             </span>
             <span>{siteConfig.name}</span>
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <SignedOut>
-              <Button asChild variant="ghost">
+              <Button asChild variant="ghost" className="px-2 sm:px-4">
                 <Link href="/sign-in">Sign in</Link>
               </Button>
-              <Button asChild>
+              <Button asChild className="px-2 sm:px-4">
                 <Link href="/sign-up">Sign up</Link>
               </Button>
             </SignedOut>
@@ -68,7 +68,7 @@ export default function HomePage() {
         </div>
       </header>
 
-      <section className="container grid min-h-screen items-center gap-10 pb-14 pt-24 lg:grid-cols-[1fr_480px]">
+      <section className="container grid min-h-[100svh] items-center gap-8 pb-10 pt-24 sm:gap-10 sm:pb-14 lg:grid-cols-[1fr_480px]">
         <div className="max-w-3xl space-y-7">
           <div className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm">
             <Sparkles className="size-4 text-emerald-700" aria-hidden="true" />
@@ -79,7 +79,7 @@ export default function HomePage() {
             <h1 className="text-4xl font-semibold leading-tight text-slate-950 sm:text-5xl lg:text-6xl">
               ArthSaathi
             </h1>
-            <p className="max-w-2xl text-lg leading-8 text-slate-700">
+            <p className="max-w-2xl text-base leading-7 text-slate-700 sm:text-lg sm:leading-8">
               Plan daily money decisions, capture expenses by voice, spot scams,
               and simulate future choices from one calm dashboard.
             </p>
@@ -119,12 +119,12 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="relative">
+        <div className="relative min-w-0">
           <div className="rounded-lg border border-slate-300 bg-white p-4 shadow-xl">
             <div className="mb-4 flex items-center justify-between border-b border-slate-200 pb-4">
               <div>
                 <p className="text-sm font-medium text-slate-500">Today</p>
-                <p className="text-2xl font-semibold">Money health 78</p>
+                <p className="text-xl font-semibold sm:text-2xl">Money health 78</p>
               </div>
               <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800">
                 Stable

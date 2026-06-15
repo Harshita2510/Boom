@@ -33,20 +33,20 @@ export default async function DashboardLayout({
         </div>
       </header>
 
-      <div className="container grid gap-6 py-6 md:grid-cols-[220px_1fr]">
+      <div className="container grid gap-4 py-3 sm:py-5 md:grid-cols-[220px_1fr] md:gap-6 md:py-6">
         <aside className="rounded-lg border bg-background p-2 md:sticky md:top-20 md:h-fit">
           <DashboardNav />
         </aside>
 
-        <div className="min-w-0 rounded-lg border bg-background p-6">
+        <div className="min-w-0 rounded-lg border bg-background p-4 sm:p-6">
           {children}
         </div>
       </div>
 
       {/* Chat floating button */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <Link href="/chat" aria-label="Open chat" className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition">
-          <MessageCircle className="w-6 h-6" />
+      <div className="fixed bottom-4 right-4 z-50 sm:bottom-6 sm:right-6">
+        <Link href="/chat" aria-label="Open chat" className="inline-flex size-12 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition hover:bg-blue-700 sm:size-14">
+          <MessageCircle className="size-5 sm:size-6" />
         </Link>
       </div>
     </div>

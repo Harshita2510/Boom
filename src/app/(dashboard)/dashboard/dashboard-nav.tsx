@@ -14,6 +14,7 @@ import {
   Landmark,
   LayoutDashboard,
   LibraryBig,
+  Menu,
   Mic,
   Radar,
   Repeat2,
@@ -110,26 +111,92 @@ const featureNavItems = [
 ];
 
 export function DashboardNav() {
+  const [menuOpen, setMenuOpen] = useState(false);
   const [featuresOpen, setFeaturesOpen] = useState(false);
 
   return (
-    <nav className="flex gap-1 overflow-x-auto md:flex-col md:overflow-visible">
-      {primaryNavItems.map((item) => {
-        const Icon = item.icon;
-
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="inline-flex h-10 shrink-0 items-center gap-2 rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+    <>
+      <nav className="md:hidden">
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setMenuOpen((value) => !value)}
+            aria-expanded={menuOpen}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border bg-background px-3 text-sm font-semibold text-muted-foreground"
           >
-            <Icon className="size-4" aria-hidden="true" />
-            {item.title}
-          </Link>
-        );
-      })}
+            <Menu className="size-4" aria-hidden="true" />
+            Menu
+          </button>
+          <button
+            type="button"
+            onClick={() => setFeaturesOpen((value) => !value)}
+            aria-expanded={featuresOpen}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border bg-background px-3 text-sm font-semibold text-muted-foreground"
+          >
+            {featuresOpen ? (
+              <ChevronDown className="size-4" aria-hidden="true" />
+            ) : (
+              <ChevronRight className="size-4" aria-hidden="true" />
+            )}
+            Features
+          </button>
+        </div>
 
-      <div className="shrink-0 md:mt-1 md:shrink">
+        {menuOpen ? (
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            {primaryNavItems.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="inline-flex h-10 items-center gap-2 rounded-md bg-muted/40 px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                >
+                  <Icon className="size-4" aria-hidden="true" />
+                  {item.title}
+                </Link>
+              );
+            })}
+          </div>
+        ) : null}
+
+        {featuresOpen ? (
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            {featureNavItems.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="inline-flex h-10 items-center gap-2 rounded-md bg-muted/40 px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                >
+                  <Icon className="size-4" aria-hidden="true" />
+                  {item.title}
+                </Link>
+              );
+            })}
+          </div>
+        ) : null}
+      </nav>
+
+      <nav className="hidden gap-1 md:flex md:flex-col">
+        {primaryNavItems.map((item) => {
+          const Icon = item.icon;
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="inline-flex h-10 items-center gap-2 rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            >
+              <Icon className="size-4" aria-hidden="true" />
+              {item.title}
+            </Link>
+          );
+        })}
+
         <button
           type="button"
           onClick={() => setFeaturesOpen((value) => !value)}
@@ -141,11 +208,11 @@ export function DashboardNav() {
           ) : (
             <ChevronRight className="size-4" aria-hidden="true" />
           )}
-          Features
+            Features
         </button>
 
         {featuresOpen ? (
-          <div className="mt-1 flex gap-1 border-l pl-2 md:flex-col">
+          <div className="mt-1 flex flex-col gap-1 border-l pl-2">
             {featureNavItems.map((item) => {
               const Icon = item.icon;
 
@@ -153,7 +220,7 @@ export function DashboardNav() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="inline-flex h-9 shrink-0 items-center gap-2 rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                  className="inline-flex h-9 items-center gap-2 rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
                 >
                   <Icon className="size-4" aria-hidden="true" />
                   {item.title}
@@ -162,7 +229,7 @@ export function DashboardNav() {
             })}
           </div>
         ) : null}
-      </div>
-    </nav>
+      </nav>
+    </>
   );
 }

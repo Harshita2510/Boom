@@ -20,12 +20,12 @@ export default async function DashboardPage() {
           <div>
             <div className="flex items-center gap-2">
               <Activity className="size-5 text-emerald-700" aria-hidden="true" />
-              <h2 className="text-xl font-semibold tracking-tight">
+              <h2 className="text-lg font-semibold tracking-tight sm:text-xl">
                 Financial Health Score
               </h2>
             </div>
           </div>
-          <div className="rounded-lg bg-emerald-50 px-4 py-3 text-emerald-800">
+          <div className="w-fit rounded-lg bg-emerald-50 px-4 py-3 text-emerald-800 sm:text-right">
             <p className="text-3xl font-semibold">{healthScore.score}</p>
             <p className="text-xs font-medium uppercase">
               {healthScore.band}
@@ -33,7 +33,7 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-4">
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {Object.entries(healthScore.parts).map(([label, value]) => (
             <div key={label} className="rounded-md border bg-muted/30 p-3">
               <p className="text-xs capitalize text-muted-foreground">

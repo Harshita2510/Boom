@@ -54,5 +54,18 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+    overflow-x: hidden;
+  }
+
+  h1,
+  h2,
+  h3,
+  p,
+  a,
+  button,
+  input,
+  textarea,
+  span {
+    overflow-wrap: anywhere;
   }
 }

@@ -84,7 +84,7 @@ export function OrchestratorTask() {
         </div>
       </div>
 
-      <div className="mt-5 grid gap-2 sm:grid-cols-2">
+      <div className="mt-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
         {quickTasks.map((item) => (
           <button
             key={item}
@@ -102,7 +102,7 @@ export function OrchestratorTask() {
           value={task}
           onChange={(event) => setTask(event.target.value)}
           placeholder="Tell ArthSaathi what you want done"
-          className="min-h-24 min-w-0 flex-1 rounded-md border bg-background px-3 py-2 text-sm"
+          className="min-h-24 min-w-0 flex-1 resize-y rounded-md border bg-background px-3 py-2 text-base sm:text-sm"
         />
         <button
           type="button"
