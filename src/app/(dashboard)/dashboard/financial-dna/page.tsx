@@ -7,6 +7,13 @@ import { OnboardingChat } from "./onboarding-chat";
 
 export const dynamic = "force-dynamic";
 
+function summaryToPoints(summary: string) {
+  return summary
+    .split(/(?<=\.)\s+/)
+    .map((point) => point.trim())
+    .filter(Boolean);
+}
+
 export default async function FinancialDNAPage() {
   const clerkUser = await currentUser();
   let existingSummary = "";
@@ -31,17 +38,32 @@ export default async function FinancialDNAPage() {
         </h1>
       </div>
 
-      {existingSummary ? (
-        <section className="rounded-lg border bg-emerald-50 p-4 text-emerald-900">
-          <h2 className="font-medium">Your current summary</h2>
-          <p className="mt-2 text-sm leading-6">{existingSummary}</p>
-        </section>
-      ) : null}
-
       <OnboardingChat
         initialSummary={existingSummary}
         userId={clerkUser?.id}
       />
+
+      {existingSummary ? (
+        <section className="rounded-lg border border-emerald-100 bg-[#f0fff7] p-5 text-emerald-950 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">
+            Result
+          </p>
+          <h2 className="mt-1 text-xl font-semibold">
+            Your Financial DNA snapshot
+          </h2>
+          <ul className="mt-4 space-y-3 text-sm leading-6">
+            {summaryToPoints(existingSummary).map((point) => (
+              <li
+                key={point}
+                className="flex gap-3 rounded-md border border-emerald-100 bg-white/80 px-3 py-2"
+              >
+                <span className="mt-2 size-1.5 shrink-0 rounded-full bg-emerald-700" />
+                <span>{point}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </main>
   );
 }
