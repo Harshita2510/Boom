@@ -19,10 +19,26 @@ const financialDNASchema = new Schema(
       enum: ["salaried", "business", "freelance", "student", "homemaker", "retired", "other"],
       required: true
     },
+    ageRange: {
+      type: String,
+      trim: true
+    },
+    city: {
+      type: String,
+      trim: true
+    },
     monthlyIncome: {
       type: Number,
       required: true,
       min: 0
+    },
+    monthlyIncomeRange: {
+      type: String,
+      trim: true
+    },
+    lifeStage: {
+      type: String,
+      trim: true
     },
     financialGoals: {
       type: [String],
@@ -73,6 +89,19 @@ const financialDNASchema = new Schema(
       type: String,
       enum: ["low", "medium", "high"],
       default: "medium"
+    },
+    hasLoans: {
+      type: Boolean,
+      default: false
+    },
+    monthlyEmi: {
+      type: Number,
+      min: 0,
+      default: 0
+    },
+    monthlyEmiRange: {
+      type: String,
+      trim: true
     },
     preferredAdviceStyle: {
       type: String,

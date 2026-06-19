@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+
 import { connectToDatabase } from "@/lib/mongoose";
 import { FinancialDNAOnboardingModel, FinancialDNAModel, UserModel } from "@/models";
 
@@ -8,257 +9,128 @@ type IncomeType =
   | "business"
   | "freelance"
   | "student"
-  | "homemaker"
   | "retired"
   | "other";
 
+type RiskAppetite = "low" | "medium" | "high";
+
 type DNAAnswers = {
-  emergency?: boolean;
-  financialGoal?: string;
+  ageRange?: string;
+  city?: string;
+  dependents?: number;
+  emiAmount?: number;
+  emiRange?: string;
+  financialGoals?: string[];
+  hasLoans?: boolean;
   incomeAmount?: number;
+  incomeRange?: string;
   incomeType?: IncomeType;
+  lifeStage?: string;
+  name?: string;
   occupation?: string;
+  riskAppetite?: RiskAppetite;
 };
 
-const incomeTypePatterns: { type: IncomeType; pattern: RegExp }[] = [
-  { type: "salaried", pattern: /\b(salary|salaried|employee|job|teacher|professor|engineer|developer|doctor|nurse|government job|private job)\b/i },
-  { type: "business", pattern: /\b(business|shop|store|merchant|vendor|owner|self employed|self-employed|startup|company)\b/i },
-  { type: "freelance", pattern: /\b(freelance|freelancer|contract|consultant|gig|delivery|driver|creator)\b/i },
-  { type: "student", pattern: /\b(student|college|school|studying)\b/i },
-  { type: "homemaker", pattern: /\b(homemaker|housewife|house husband|home maker)\b/i },
-  { type: "retired", pattern: /\b(retired|pension|pensioner)\b/i },
-  { type: "other", pattern: /\b(other|none of these)\b/i }
+const TOTAL_STEPS = 11;
+
+const incomeTypeByMessage: { pattern: RegExp; type: IncomeType; occupation: string }[] = [
+  { occupation: "salaried professional", pattern: /salaried/i, type: "salaried" },
+  { occupation: "self-employed professional", pattern: /self-employed|self employed/i, type: "other" },
+  { occupation: "business owner", pattern: /business/i, type: "business" },
+  { occupation: "freelancer", pattern: /freelance/i, type: "freelance" },
+  { occupation: "retired", pattern: /retired/i, type: "retired" },
+  { occupation: "student", pattern: /student/i, type: "student" }
 ];
 
-function normalizeAmount(raw: string) {
-  const cleaned = raw.replace(/,/g, "");
-  const value = Number(cleaned);
+function getIncomeAmount(message: string) {
+  if (/under/i.test(message)) {
+    return 15000;
+  }
 
-  return Number.isFinite(value) ? value : undefined;
+  if (/20k|20,000|40k|40,000/i.test(message)) {
+    return 30000;
+  }
+
+  if (/70k|70,000/i.test(message)) {
+    return 55000;
+  }
+
+  if (/1 lakh|1l|1 lakh/i.test(message) && /70k|70,000/i.test(message)) {
+    return 85000;
+  }
+
+  if (/2l|2 lakh|2 lakhs/i.test(message)) {
+    return /above/i.test(message) ? 250000 : 150000;
+  }
+
+  const numeric = message.replace(/,/g, "").match(/\d+(?:\.\d+)?/);
+
+  return numeric ? Number(numeric[0]) : 50000;
 }
 
-function normalizeAmountRange(firstRaw: string, secondRaw?: string) {
-  const first = normalizeAmount(firstRaw);
-  const second = secondRaw ? normalizeAmount(secondRaw) : undefined;
-
-  if (first === undefined) {
-    return undefined;
+function getEmiAmount(message: string) {
+  if (/under/i.test(message)) {
+    return 3000;
   }
 
-  if (second === undefined) {
-    return first;
+  if (/5k|5,000|15k|15,000/i.test(message)) {
+    return 10000;
   }
 
-  const scaledFirst =
-    first < 1000 && second >= 1000
-      ? first * 10 ** Math.max(0, String(Math.round(second)).length - String(Math.round(first)).length)
-      : first;
+  if (/30k|30,000/i.test(message)) {
+    return 22500;
+  }
 
-  return Math.round((scaledFirst + second) / 2);
+  if (/50k|50,000/i.test(message)) {
+    return 40000;
+  }
+
+  if (/above/i.test(message)) {
+    return 60000;
+  }
+
+  const numeric = message.replace(/,/g, "").match(/\d+(?:\.\d+)?/);
+
+  return numeric ? Number(numeric[0]) : 0;
 }
 
-const numberWords: Record<string, number> = {
-  a: 1,
-  an: 1,
-  eight: 8,
-  eighteen: 18,
-  eighty: 80,
-  eleven: 11,
-  fifteen: 15,
-  fifty: 50,
-  five: 5,
-  forty: 40,
-  four: 4,
-  fourteen: 14,
-  hundred: 100,
-  nine: 9,
-  nineteen: 19,
-  ninety: 90,
-  one: 1,
-  seven: 7,
-  seventeen: 17,
-  seventy: 70,
-  six: 6,
-  sixteen: 16,
-  sixty: 60,
-  ten: 10,
-  thirteen: 13,
-  thirty: 30,
-  three: 3,
-  twelve: 12,
-  twenty: 20,
-  two: 2,
-  zero: 0
-};
-
-function parseSmallNumberWords(text: string) {
-  const tokens = text
-    .toLowerCase()
-    .replace(/-/g, " ")
-    .split(/\s+/)
-    .filter(Boolean);
-
-  let total = 0;
-  let current = 0;
-  let found = false;
-
-  for (const token of tokens) {
-    const value = numberWords[token];
-
-    if (value === undefined) {
-      continue;
-    }
-
-    found = true;
-
-    if (token === "hundred") {
-      current = Math.max(1, current) * 100;
-    } else {
-      current += value;
-    }
+function getDependents(message: string) {
+  if (/none|zero|0/i.test(message)) {
+    return 0;
   }
 
-  total += current;
+  if (/4\+|four/i.test(message)) {
+    return 4;
+  }
 
-  return found ? total : undefined;
+  const numeric = message.match(/\d+/);
+
+  return numeric ? Number(numeric[0]) : 0;
 }
 
-function extractIndianWordAmount(message: string) {
-  const normalized = message.toLowerCase().replace(/,/g, "");
-  const numberWordPattern =
-    "(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|a|an)";
-  const match = normalized.match(
-    new RegExp(
-      `\\b((?:\\d+(?:\\.\\d+)?|${numberWordPattern}(?:[-\\s]+${numberWordPattern}){0,4}))\\s+(lakh|lac|lakhs|lacs|crore|crores|thousand|k)\\b`,
-      "i"
-    )
-  );
-
-  if (!match?.[1] || !match[2]) {
-    return undefined;
-  }
-
-  const base = Number.isFinite(Number(match[1]))
-    ? Number(match[1])
-    : parseSmallNumberWords(match[1]);
-
-  if (!base) {
-    return undefined;
-  }
-
-  const multipliers: Record<string, number> = {
-    crore: 10000000,
-    crores: 10000000,
-    k: 1000,
-    lac: 100000,
-    lacs: 100000,
-    lakh: 100000,
-    lakhs: 100000,
-    thousand: 1000
-  };
-  const multiplier = multipliers[match[2].toLowerCase()];
-
-  if (!multiplier) {
-    return undefined;
-  }
-
-  return Math.round(base * multiplier);
-}
-
-function extractIncomeAmount(message: string) {
-  const normalized = message.replace(/[–—]/g, "-");
-  const range = normalized.match(
-    /(?:earn|earned|earning|income|salary|make|receive|received|getting|got|paid)\D{0,40}(?:₹|rs\.?|inr|rupees?)?\s*(\d[\d,]*(?:\.\d+)?)\s*(?:to|-)\s*(?:₹|rs\.?|inr|rupees?)?\s*(\d[\d,]*(?:\.\d+)?)/i
-  );
-
-  if (range?.[1] && range[2]) {
-    return normalizeAmountRange(range[1], range[2]);
-  }
-
-  const direct = normalized.match(
-    /(?:earn|earned|earning|income|salary|make|receive|received|getting|got|paid)\D{0,40}(?:₹|rs\.?|inr|rupees?)?\s*(\d[\d,]*(?:\.\d+)?)(?!\s*(?:to|-)\s*(?:₹|rs\.?|inr|rupees?)?\s*\d)/i
-  );
-
-  if (direct?.[1]) {
-    return normalizeAmount(direct[1]);
-  }
-
-  const wordAmount = extractIndianWordAmount(normalized);
-
-  if (wordAmount !== undefined) {
-    return wordAmount;
-  }
-
-  const currencyRange = normalized.match(
-    /(?:rs\.?|inr|rupees?|₹)\s*(\d[\d,]*(?:\.\d+)?)\s*(?:to|-)\s*(?:rs\.?|inr|rupees?|₹)?\s*(\d[\d,]*(?:\.\d+)?)/i
-  );
-
-  if (currencyRange?.[1] && currencyRange[2]) {
-    return normalizeAmountRange(currencyRange[1], currencyRange[2]);
-  }
-
-  const withCurrency = normalized.match(
-    /(?:rs\.?|inr|rupees?|₹)\s*(\d[\d,]*(?:\.\d+)?)|(\d[\d,]*(?:\.\d+)?)\s*(?:rs\.?|inr|rupees?|₹)/i
-  );
-  const matched = withCurrency?.[1] ?? withCurrency?.[2];
-
-  return matched ? normalizeAmount(matched) : undefined;
-}
-
-function extractIncomeType(message: string): IncomeType | undefined {
-  return incomeTypePatterns.find((item) => item.pattern.test(message))?.type;
-}
-
-function extractOccupation(message: string) {
-  const patterns = [
-    /\bi am (?:a |an )?([a-zA-Z ]{2,40}?)(?: with| and| who| earning| making|$)/i,
-    /\bi work as (?:a |an )?([a-zA-Z ]{2,40}?)(?: with| and| earning| making|$)/i,
-    /\bmy occupation is ([a-zA-Z ]{2,40}?)(?: with| and| earning| making|$)/i
-  ];
-
-  for (const pattern of patterns) {
-    const value = message.match(pattern)?.[1]?.trim();
-
-    if (value) {
-      return value;
-    }
-  }
-
-  if (/\bteacher\b/i.test(message)) {
-    return "teacher";
-  }
-
-  return undefined;
-}
-
-function extractGoal(message: string) {
-  const goalMatch = message.match(
-    /(?:goal is|main goal is|my goal is|main aim is|want to|planning to|plan to|save for|buy|purchase)\s+(.+?)(?:\s+and\s+(?:my\s+)?emergency|\s+with\s+(?:my\s+)?emergency|$)/i
-  );
-
-  if (goalMatch?.[1]) {
-    return goalMatch[1]
-      .replace(/^to\s+/i, "")
-      .trim();
-  }
-
-  if (
-    /\b(house|home|education|family|bike|car|wedding|business|loan|debt|retirement)\b/i.test(message) &&
-    !/\b(emergency fund|emergency savings|emergencies)\b/i.test(message)
-  ) {
-    return message.trim();
-  }
-
-  return undefined;
-}
-
-function extractEmergency(message: string) {
-  if (/\b(yes|yep|yeah|true|i have|have emergency|saved|one month|1 month)\b/i.test(message)) {
+function getLoanStatus(message: string) {
+  if (/yes|loan|emi/i.test(message)) {
     return true;
   }
 
-  if (/\b(no|nope|nah|false|not yet|do not|don't|dont|no savings)\b/i.test(message)) {
+  if (/no|debt-free|debt free/i.test(message)) {
     return false;
+  }
+
+  return undefined;
+}
+
+function getRiskAppetite(message: string): RiskAppetite | undefined {
+  if (/conservative|safety|lower/i.test(message)) {
+    return "low";
+  }
+
+  if (/aggressive|volatility|maximum/i.test(message)) {
+    return "high";
+  }
+
+  if (/moderate|balanced|growth/i.test(message)) {
+    return "medium";
   }
 
   return undefined;
@@ -266,117 +138,159 @@ function extractEmergency(message: string) {
 
 function mergeAnswers(current: DNAAnswers, message: string, step: number): DNAAnswers {
   const next = { ...current };
-  const isEmergencyStep = step === 3;
-  const emergency = extractEmergency(message);
-  const hasIncomeCorrection = /\b(earn|earned|earning|income|salary|make|receive|received|getting|got|paid)\b/i.test(message);
-  const canUpdateProfileFields = !isEmergencyStep || (isEmergencyStep && emergency === undefined);
-  const incomeType = canUpdateProfileFields ? extractIncomeType(message) : undefined;
-  const incomeAmount =
-    canUpdateProfileFields || hasIncomeCorrection
-      ? extractIncomeAmount(message)
-      : undefined;
-  const occupation = canUpdateProfileFields ? extractOccupation(message) : undefined;
-  const goal = canUpdateProfileFields ? extractGoal(message) : undefined;
-
-  if (incomeType && !next.incomeType) {
-    next.incomeType = incomeType;
-  }
-
-  if (
-    incomeAmount !== undefined &&
-    (next.incomeAmount === undefined || hasIncomeCorrection || step === 1)
-  ) {
-    next.incomeAmount = incomeAmount;
-  }
-
-  if (occupation && !next.occupation) {
-    next.occupation = occupation;
-  }
-
-  if (goal && !next.financialGoal) {
-    next.financialGoal = goal;
-  }
-
-  if (emergency !== undefined) {
-    next.emergency = emergency;
-  }
-
   const trimmed = message.trim();
 
-  if (step === 0 && !incomeType && /^[a-zA-Z ]{2,30}$/.test(trimmed)) {
-    next.incomeType = extractIncomeType(`I am ${trimmed}`) ?? next.incomeType;
+  if (!trimmed) {
+    return next;
   }
 
-  if (step === 1 && incomeAmount === undefined) {
-    const value = normalizeAmount(trimmed);
+  if (step === 0) {
+    next.name = trimmed.split(/\s+/)[0];
+  }
 
-    if (value !== undefined) {
-      next.incomeAmount = value;
+  if (step === 1) {
+    next.ageRange = trimmed;
+  }
+
+  if (step === 2) {
+    next.city = trimmed;
+  }
+
+  if (step === 3) {
+    const match = incomeTypeByMessage.find((item) => item.pattern.test(trimmed));
+    next.incomeType = match?.type ?? "other";
+    next.occupation = match?.occupation ?? trimmed;
+  }
+
+  if (step === 4) {
+    next.incomeRange = trimmed;
+    next.incomeAmount = getIncomeAmount(trimmed);
+  }
+
+  if (step === 5) {
+    next.lifeStage = trimmed;
+  }
+
+  if (step === 6) {
+    next.dependents = getDependents(trimmed);
+  }
+
+  if (step === 7) {
+    next.hasLoans = getLoanStatus(trimmed);
+    if (next.hasLoans === false) {
+      next.emiAmount = 0;
+      next.emiRange = "No EMI";
     }
   }
 
-  if (step === 2 && !goal && trimmed.length >= 2) {
-    next.financialGoal = trimmed;
+  if (step === 8) {
+    next.emiRange = trimmed;
+    next.emiAmount = getEmiAmount(trimmed);
+  }
+
+  if (step === 9) {
+    next.financialGoals = trimmed
+      .split(",")
+      .map((goal) => goal.trim())
+      .filter(Boolean)
+      .slice(0, 4);
+  }
+
+  if (step === 10) {
+    next.riskAppetite = getRiskAppetite(trimmed) ?? "medium";
   }
 
   return next;
 }
 
 function getNextStep(answers: DNAAnswers) {
-  if (!answers.incomeType) {
-    return 0;
-  }
+  if (!answers.name) return 0;
+  if (!answers.ageRange) return 1;
+  if (!answers.city) return 2;
+  if (!answers.incomeType) return 3;
+  if (answers.incomeAmount === undefined) return 4;
+  if (!answers.lifeStage) return 5;
+  if (answers.dependents === undefined) return 6;
+  if (answers.hasLoans === undefined) return 7;
+  if (answers.hasLoans && answers.emiAmount === undefined) return 8;
+  if (!answers.financialGoals?.length) return 9;
+  if (!answers.riskAppetite) return 10;
 
-  if (answers.incomeAmount === undefined) {
-    return 1;
-  }
-
-  if (!answers.financialGoal) {
-    return 2;
-  }
-
-  if (answers.emergency === undefined) {
-    return 3;
-  }
-
-  return 4;
+  return TOTAL_STEPS;
 }
 
 function getPromptForStep(step: number, answers: DNAAnswers) {
   if (step === 0) {
-    return "Tell me your income type in your own words. Example: I get salary, I run a shop, I freelance, I am a student.";
+    return "Namaste! I'm ArthSaathi, your personal AI financial companion.\nBefore we build your Financial DNA, what should I call you?";
   }
 
   if (step === 1) {
-    return "Got it. What is your monthly income amount? You can say something like: I earn 45,000 rupees per month.";
+    return `Nice to meet you, ${answers.name}! How old are you?`;
   }
 
   if (step === 2) {
-    return "Thanks. What is your main financial goal? You can mention family, house, education, emergency fund, debt, or any big purchase.";
+    return "Which city are you based in?";
   }
 
   if (step === 3) {
-    const capturedIncome =
-      answers.incomeAmount !== undefined
-        ? new Intl.NumberFormat("en-IN", {
-            currency: "INR",
-            maximumFractionDigits: 0,
-            style: "currency"
-          }).format(answers.incomeAmount)
-        : "not captured";
+    return `Got it, ${answers.city}! What kind of work do you do?`;
+  }
 
-    return `Last check: do you already have at least 1 month of expenses saved for emergencies? You can answer yes or no. I have captured income type as ${answers.incomeType} and income as ${capturedIncome}.`;
+  if (step === 4) {
+    return "What's your approximate monthly income?";
+  }
+
+  if (step === 5) {
+    return "What's your current family situation?";
+  }
+
+  if (step === 6) {
+    return "How many people depend on you financially? (parents, children, etc.)";
+  }
+
+  if (step === 7) {
+    return "Do you have any existing loans or EMIs running right now?";
+  }
+
+  if (step === 8) {
+    return "What's your total monthly EMI across all loans?";
+  }
+
+  if (step === 9) {
+    return `Almost done, ${answers.name}! What are your main financial goals? Pick up to 4.`;
+  }
+
+  if (step === 10) {
+    return "Last question! How comfortable are you with investment risk?";
   }
 
   return "";
 }
 
-function getRiskAppetite(answers: DNAAnswers): "low" | "medium" | "high" {
-  if (answers.incomeAmount && answers.incomeAmount > 80000 && answers.emergency) {
+function getRiskProfile(riskAppetite: RiskAppetite) {
+  if (riskAppetite === "low") {
+    return "conservative";
+  }
+
+  if (riskAppetite === "high") {
+    return "growth";
+  }
+
+  return "balanced";
+}
+
+function getDebtComfortLevel(answers: DNAAnswers) {
+  if (!answers.hasLoans || !answers.emiAmount || !answers.incomeAmount) {
+    return "low";
+  }
+
+  const emiRatio = answers.emiAmount / Math.max(answers.incomeAmount, 1);
+
+  if (emiRatio > 0.4) {
     return "high";
   }
 
-  if (answers.emergency) {
+  if (emiRatio > 0.2) {
     return "medium";
   }
 
@@ -384,20 +298,12 @@ function getRiskAppetite(answers: DNAAnswers): "low" | "medium" | "high" {
 }
 
 function getSummary(answers: DNAAnswers) {
-  const occupation = answers.occupation || "user";
-  const income =
-    answers.incomeAmount !== undefined
-      ? new Intl.NumberFormat("en-IN", {
-          currency: "INR",
-          maximumFractionDigits: 0,
-          style: "currency"
-        }).format(answers.incomeAmount)
-      : "your stated income";
-  const emergencyText = answers.emergency
-    ? "You already have a basic emergency cushion."
-    : "Your first priority should be building at least one month of emergency savings.";
+  const goals = answers.financialGoals?.join(", ") || "your financial goals";
+  const loanText = answers.hasLoans
+    ? `You currently have EMIs around ${answers.emiRange}.`
+    : "You are currently debt-free.";
 
-  return `You are a ${occupation} with ${answers.incomeType} income of ${income} per month. Your main goal is ${answers.financialGoal}. ${emergencyText}`;
+  return `${answers.name} is based in ${answers.city}, in the ${answers.ageRange} age range, and is a ${answers.occupation}. Monthly income is around ${answers.incomeRange}. Life stage: ${answers.lifeStage}, with ${answers.dependents ?? 0} financial dependent(s). ${loanText} Main goals: ${goals}. Risk style is ${answers.riskAppetite}.`;
 }
 
 export async function POST(req: Request) {
@@ -432,15 +338,21 @@ export async function POST(req: Request) {
     );
 
     if (!appUser) {
-      return NextResponse.json({ error: "User profile not found. Please refresh and try again." }, { status: 404 });
+      return NextResponse.json(
+        { error: "User profile not found. Please refresh and try again." },
+        { status: 404 }
+      );
     }
 
     const appUserId = appUser._id;
 
-    // find or create onboarding doc
     let onboard = await FinancialDNAOnboardingModel.findOne({ userId: appUserId });
     if (!onboard) {
-      onboard = await FinancialDNAOnboardingModel.create({ userId: appUserId, answers: {}, step: 0 });
+      onboard = await FinancialDNAOnboardingModel.create({
+        answers: {},
+        step: 0,
+        userId: appUserId
+      });
     }
 
     if (reset === true) {
@@ -454,8 +366,7 @@ export async function POST(req: Request) {
 
       return NextResponse.json({
         completed: false,
-        reply:
-          "Okay, let's update your Financial DNA. Tell me about your current work, income, monthly earning, main goal, and emergency savings."
+        reply: getPromptForStep(0, {})
       });
     }
 
@@ -474,8 +385,8 @@ export async function POST(req: Request) {
         await onboard.save();
       } else {
         const reply = existing?.summary
-        ? `Your Financial DNA is already complete: ${existing.summary}`
-        : "Your Financial DNA is already complete. You can continue to the dashboard.";
+          ? `Your Financial DNA is already complete: ${existing.summary}`
+          : "Your Financial DNA is already complete. You can continue to the dashboard.";
         return NextResponse.json({ completed: true, reply });
       }
     }
@@ -493,47 +404,66 @@ export async function POST(req: Request) {
     onboard.markModified("answers");
     await onboard.save();
 
-    if (nextStep < 4) {
+    if (nextStep < TOTAL_STEPS) {
       return NextResponse.json({
         answers,
+        completed: false,
         reply: getPromptForStep(nextStep, answers),
         step: nextStep
       });
     }
 
-      const riskAppetite = getRiskAppetite(answers);
-      const summary = getSummary(answers);
-      const fdna = await FinancialDNAModel.findOneAndUpdate(
-        { userId: appUserId },
-        {
-          userId: appUserId,
-          occupation: answers.occupation || appUser.firstName || "Not specified",
-          incomeType: answers.incomeType || "other",
-          monthlyIncome: answers.incomeAmount || 0,
-          financialGoals: [answers.financialGoal || ""],
-          dependents: 0,
-          riskAppetite,
-          summary,
-          riskProfile: riskAppetite === "high" ? "growth" : riskAppetite === "low" ? "conservative" : "balanced",
-          incomeStability: answers.incomeType === "salaried" ? "high" : answers.incomeType === "business" || answers.incomeType === "freelance" ? "medium" : "low",
-          lastCalculatedAt: new Date()
-        },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
-      );
+    const riskAppetite = answers.riskAppetite ?? "medium";
+    const summary = getSummary(answers);
+    const fdna = await FinancialDNAModel.findOneAndUpdate(
+      { userId: appUserId },
+      {
+        ageRange: answers.ageRange,
+        city: answers.city,
+        debtComfortLevel: getDebtComfortLevel(answers),
+        dependents: answers.dependents ?? 0,
+        financialGoals: answers.financialGoals ?? [],
+        hasLoans: answers.hasLoans ?? false,
+        incomeStability:
+          answers.incomeType === "salaried"
+            ? "high"
+            : answers.incomeType === "business" || answers.incomeType === "freelance"
+              ? "medium"
+              : "low",
+        incomeType: answers.incomeType ?? "other",
+        lastCalculatedAt: new Date(),
+        lifeStage: answers.lifeStage,
+        monthlyEmi: answers.emiAmount ?? 0,
+        monthlyEmiRange: answers.emiRange,
+        monthlyIncome: answers.incomeAmount ?? 0,
+        monthlyIncomeRange: answers.incomeRange,
+        occupation: answers.occupation || "Not specified",
+        preferredAdviceStyle: "simple",
+        riskAppetite,
+        riskProfile: getRiskProfile(riskAppetite),
+        summary,
+        tags: [answers.city, answers.lifeStage, answers.incomeRange].filter(Boolean),
+        userId: appUserId
+      },
+      { new: true, setDefaultsOnInsert: true, upsert: true }
+    );
 
-      onboard.completed = true;
-      await onboard.save();
-      appUser.onboardingStatus = "completed";
-      await appUser.save();
+    onboard.completed = true;
+    await onboard.save();
+    appUser.firstName = answers.name || appUser.firstName;
+    appUser.onboardingStatus = "completed";
+    await appUser.save();
 
-      return NextResponse.json({
-        answers,
-        completed: true,
-        fdna,
-        reply: `All done. Your Financial DNA is ready: ${fdna?.summary}`
-      });
-  } catch (err: any) {
+    return NextResponse.json({
+      answers,
+      completed: true,
+      fdna,
+      reply: `Excellent, ${answers.name}! I have everything I need.`
+    });
+  } catch (err: unknown) {
     console.error(err);
-    return NextResponse.json({ error: String(err?.message || err) }, { status: 500 });
+    const message = err instanceof Error ? err.message : String(err);
+
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

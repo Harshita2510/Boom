@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { UserButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import { MessageCircle } from "lucide-react";
 
 import { siteConfig } from "@/config/site";
 import { DashboardNav } from "./dashboard-nav";
+import { DashboardUserButton } from "./dashboard-user-button";
 
 export const dynamic = "force-dynamic";
 
@@ -22,14 +22,7 @@ export default async function DashboardLayout({
           <Link href="/dashboard" className="font-semibold tracking-tight">
             {siteConfig.name}
           </Link>
-          <UserButton
-            afterSignOutUrl="/"
-            appearance={{
-              elements: {
-                avatarBox: "size-9"
-              }
-            }}
-          />
+          <DashboardUserButton />
         </div>
       </header>
 
