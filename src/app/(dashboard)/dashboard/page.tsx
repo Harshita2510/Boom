@@ -139,13 +139,13 @@ function ActionCard({
   return (
     <Link
       href={href}
-      className="group flex min-h-[148px] flex-col justify-between rounded-[24px] border border-white/70 bg-white/80 p-5 shadow-sm shadow-slate-200/70 backdrop-blur transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+      className="group flex min-h-[132px] flex-col justify-between rounded-[22px] border border-white/70 bg-white/80 p-4 shadow-sm shadow-slate-200/70 backdrop-blur transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 sm:min-h-[148px] sm:rounded-[24px] sm:p-5"
     >
       <span className="inline-flex size-12 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-sm">
         <Icon className="size-5" aria-hidden="true" />
       </span>
       <span>
-        <span className="flex items-center justify-between gap-3 text-base font-semibold text-slate-950">
+        <span className="flex items-center justify-between gap-3 text-sm font-semibold text-slate-950 sm:text-base">
           {title}
           <ArrowRight
             className="size-4 shrink-0 text-slate-400 transition group-hover:translate-x-1 group-hover:text-indigo-600"
@@ -164,11 +164,11 @@ function ActionCard({
 
 function BoomMark() {
   return (
-    <div className="relative grid size-16 place-items-center rounded-[24px] bg-slate-950 text-white shadow-xl shadow-indigo-200">
+    <div className="relative grid size-14 place-items-center rounded-[22px] bg-slate-950 text-white shadow-xl shadow-indigo-200 sm:size-16 sm:rounded-[24px]">
       <span className="absolute -right-1 -top-1 grid size-6 place-items-center rounded-full bg-emerald-400 text-slate-950">
         <Sparkles className="size-3.5" aria-hidden="true" />
       </span>
-      <Mic className="size-7" aria-hidden="true" />
+      <Mic className="size-6 sm:size-7" aria-hidden="true" />
     </div>
   );
 }
@@ -183,14 +183,14 @@ function FirstTimeDashboard({
   const riskStyle = getRiskStyle(profile?.riskAppetite);
 
   return (
-    <main className="space-y-6">
-      <section className="overflow-hidden rounded-[32px] border border-white/70 bg-[linear-gradient(135deg,#fff7ed_0%,#eef2ff_48%,#ecfeff_100%)] p-5 shadow-sm sm:p-7">
+    <main className="space-y-5 sm:space-y-6">
+      <section className="overflow-hidden rounded-[24px] border border-white/70 bg-[linear-gradient(135deg,#fff7ed_0%,#eef2ff_48%,#ecfeff_100%)] p-4 shadow-sm sm:rounded-[32px] sm:p-7">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="max-w-2xl">
             <div className="mb-5">
               <BoomMark />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-4xl">
               🎉 Welcome to Boom
             </h1>
             <p className="mt-3 text-base leading-7 text-slate-700 sm:text-lg">
@@ -213,7 +213,7 @@ function FirstTimeDashboard({
         <h2 className="text-xl font-semibold tracking-tight text-slate-950">
           Your Snapshot
         </h2>
-        <div className="rounded-[28px] border border-white/70 bg-slate-950 p-5 text-white shadow-xl shadow-slate-200 sm:p-6">
+        <div className="rounded-[24px] border border-white/70 bg-slate-950 p-4 text-white shadow-xl shadow-slate-200 sm:rounded-[28px] sm:p-6">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {[
               ["Goal", primaryGoal],
@@ -223,7 +223,7 @@ function FirstTimeDashboard({
             ].map(([label, value]) => (
               <div
                 key={label}
-                className="rounded-[22px] border border-white/10 bg-white/10 p-4 backdrop-blur"
+                className="rounded-[20px] border border-white/10 bg-white/10 p-3 backdrop-blur sm:rounded-[22px] sm:p-4"
               >
                 <p className="text-xs font-medium uppercase text-white/60">
                   {label}
@@ -246,8 +246,8 @@ function FirstTimeDashboard({
         </div>
       </section>
 
-      <section className="rounded-[28px] border border-indigo-100 bg-white/85 p-5 shadow-sm backdrop-blur sm:p-6">
-        <div className="flex gap-4">
+      <section className="rounded-[24px] border border-indigo-100 bg-white/85 p-4 shadow-sm backdrop-blur sm:rounded-[28px] sm:p-6">
+        <div className="flex flex-col gap-3 min-[420px]:flex-row min-[420px]:gap-4">
           <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-indigo-600 text-white">
             <WandSparkles className="size-5" aria-hidden="true" />
           </div>
@@ -298,11 +298,11 @@ function ReturningDashboard({
   });
 
   return (
-    <main className="space-y-6">
-      <section className="rounded-[32px] border border-white/70 bg-[linear-gradient(135deg,#f8fafc_0%,#ecfeff_52%,#fff7ed_100%)] p-5 shadow-sm sm:p-7">
+    <main className="space-y-5 sm:space-y-6">
+      <section className="rounded-[24px] border border-white/70 bg-[linear-gradient(135deg,#f8fafc_0%,#ecfeff_52%,#fff7ed_100%)] p-4 shadow-sm sm:rounded-[32px] sm:p-7">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-4xl">
               👋 Welcome Back
             </h1>
             <p className="mt-3 text-base leading-7 text-slate-700 sm:text-lg">
@@ -313,14 +313,14 @@ function ReturningDashboard({
         </div>
       </section>
 
-      <section className="rounded-[28px] border border-white/70 bg-white/85 p-5 shadow-sm backdrop-blur sm:p-6">
+      <section className="rounded-[24px] border border-white/70 bg-white/85 p-4 shadow-sm backdrop-blur sm:rounded-[28px] sm:p-6">
         <div className="flex items-start gap-4">
           <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-emerald-100 text-emerald-700">
             <Target className="size-5" aria-hidden="true" />
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-slate-500">Goal Progress</p>
-            <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-950">
+            <h2 className="mt-1 text-lg font-semibold tracking-tight text-slate-950 sm:text-xl">
               🎯 {goalTitle}
             </h2>
             <p className="mt-3 text-lg font-semibold text-slate-950">
@@ -348,7 +348,7 @@ function ReturningDashboard({
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[1fr_1fr]">
-        <div className="rounded-[28px] border border-white/70 bg-white/85 p-5 shadow-sm backdrop-blur sm:p-6">
+        <div className="rounded-[24px] border border-white/70 bg-white/85 p-4 shadow-sm backdrop-blur sm:rounded-[28px] sm:p-6">
           <h2 className="text-lg font-semibold tracking-tight text-slate-950">
             Your Activity
           </h2>
@@ -373,8 +373,8 @@ function ReturningDashboard({
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-indigo-100 bg-indigo-50/80 p-5 shadow-sm backdrop-blur sm:p-6">
-          <div className="flex gap-4">
+        <div className="rounded-[24px] border border-indigo-100 bg-indigo-50/80 p-4 shadow-sm backdrop-blur sm:rounded-[28px] sm:p-6">
+          <div className="flex flex-col gap-3 min-[420px]:flex-row min-[420px]:gap-4">
             <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-indigo-600 text-white">
               <WandSparkles className="size-5" aria-hidden="true" />
             </div>
@@ -391,13 +391,13 @@ function ReturningDashboard({
         </div>
       </section>
 
-      <section className="rounded-[28px] border border-white/70 bg-slate-950 p-5 text-white shadow-xl shadow-slate-200 sm:p-6">
+      <section className="rounded-[24px] border border-white/70 bg-slate-950 p-4 text-white shadow-xl shadow-slate-200 sm:rounded-[28px] sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-medium text-white/60">
               Suggested Next Step
             </p>
-            <h2 className="mt-1 text-2xl font-semibold tracking-tight">
+            <h2 className="mt-1 text-xl font-semibold tracking-tight sm:text-2xl">
               Complete Your First Week
             </h2>
           </div>

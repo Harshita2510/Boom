@@ -507,14 +507,14 @@ export function OnboardingChat({
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-[#dfe6df] bg-[#f8f7f2] font-sans shadow-[0_18px_55px_rgba(25,55,45,0.10)]">
-      <header className="flex items-center justify-between gap-4 border-b border-[#e7e2d7] bg-white px-4 py-4 sm:px-6">
+    <div className="overflow-hidden rounded-2xl border border-[#dfe6df] bg-[#f8f7f2] font-sans shadow-[0_18px_55px_rgba(25,55,45,0.10)] sm:rounded-[24px]">
+      <header className="flex flex-col gap-3 border-b border-[#e7e2d7] bg-white px-3 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[#216f61] text-white shadow-[0_10px_24px_rgba(33,111,97,0.28)]">
-            <Sparkles className="size-6" aria-hidden="true" />
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-[#216f61] text-white shadow-[0_10px_24px_rgba(33,111,97,0.28)] sm:size-12">
+            <Sparkles className="size-5 sm:size-6" aria-hidden="true" />
           </div>
           <div className="min-w-0">
-            <h2 className="truncate text-xl font-bold tracking-tight text-slate-950">
+            <h2 className="truncate text-lg font-bold tracking-tight text-slate-950 sm:text-xl">
               ArthSaathi
             </h2>
             <p className="truncate text-[13px] font-medium leading-5 text-[#6d746c] sm:text-sm">
@@ -522,7 +522,7 @@ export function OnboardingChat({
             </p>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <div className="hidden rounded-full border border-[#dfe4dc] bg-[#fffdfa] p-1 sm:flex">
             {(["en", "hi"] as Language[]).map((item) => (
               <button
@@ -540,11 +540,11 @@ export function OnboardingChat({
               </button>
             ))}
           </div>
-          <span className="w-10 text-right text-sm font-semibold text-[#6d746c]">
+          <span className="w-9 text-right text-xs font-semibold text-[#6d746c] sm:w-10 sm:text-sm">
             {progress}%
           </span>
           <div
-            className="h-2 w-24 overflow-hidden rounded-full bg-[#e5e7df] sm:w-44"
+            className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-[#e5e7df] sm:w-44 sm:flex-none"
             aria-label={`Financial DNA progress ${progress}%`}
           >
             <div
@@ -575,8 +575,8 @@ export function OnboardingChat({
         </div>
       ) : null}
 
-      <section className="flex min-h-[520px] flex-col bg-[linear-gradient(180deg,#fbfaf6_0%,#f6f5ef_100%)] sm:min-h-[640px]">
-          <div ref={scrollRef} className="flex-1 space-y-7 overflow-y-auto p-4 sm:p-8">
+      <section className="flex min-h-[440px] flex-col bg-[linear-gradient(180deg,#fbfaf6_0%,#f6f5ef_100%)] sm:min-h-[640px]">
+          <div ref={scrollRef} className="flex-1 space-y-5 overflow-y-auto p-3 sm:space-y-7 sm:p-8">
             {messages.map((message, index) => {
               const isUser = message.role === "user";
 
@@ -591,7 +591,7 @@ export function OnboardingChat({
                     </div>
                   ) : null}
                   <div
-                    className={`max-w-[78%] whitespace-pre-line px-4 py-3 text-[15px] font-medium leading-7 shadow-[0_10px_26px_rgba(15,23,42,0.08)] sm:px-5 sm:text-base ${
+                    className={`max-w-[86%] whitespace-pre-line px-4 py-3 text-sm font-medium leading-6 shadow-[0_10px_26px_rgba(15,23,42,0.08)] sm:max-w-[78%] sm:px-5 sm:text-base sm:leading-7 ${
                       isUser
                         ? "rounded-3xl rounded-tr-lg bg-[#216f61] text-white"
                         : "rounded-3xl rounded-tl-lg border border-[#e5e0d6] bg-white text-slate-950"
@@ -616,7 +616,7 @@ export function OnboardingChat({
             ) : null}
           </div>
 
-          <div className="border-t border-[#e7e2d7] bg-white p-4 sm:p-5">
+          <div className="border-t border-[#e7e2d7] bg-white p-3 sm:p-5">
             <div className="mb-4 flex rounded-full border border-[#dfe4dc] bg-[#fffdfa] p-1 sm:hidden">
               {(["en", "hi"] as Language[]).map((item) => (
                 <button
@@ -636,7 +636,7 @@ export function OnboardingChat({
             </div>
 
             {quickReplies.length > 0 ? (
-              <div className="mb-4 flex flex-wrap gap-3">
+              <div className="mb-4 flex flex-wrap gap-2 sm:gap-3">
                 {quickReplies.map((reply) => {
                   const selected = selectedGoals.includes(reply.value);
 
@@ -669,7 +669,7 @@ export function OnboardingChat({
                         void send(reply.value, getVisibleLabel(reply));
                       }}
                       disabled={loading}
-                      className={`inline-flex min-h-12 items-center gap-2 rounded-full border-2 px-4 text-[15px] font-semibold leading-none shadow-[0_7px_18px_rgba(15,23,42,0.07)] transition hover:-translate-y-0.5 disabled:opacity-50 sm:text-base ${
+                      className={`inline-flex min-h-10 max-w-full items-center gap-2 rounded-full border-2 px-3 py-2 text-sm font-semibold leading-tight shadow-[0_7px_18px_rgba(15,23,42,0.07)] transition hover:-translate-y-0.5 disabled:opacity-50 sm:min-h-12 sm:px-4 sm:text-base ${
                         selected
                           ? "border-[#216f61] bg-[#216f61] text-white"
                           : "border-[#dfe4dc] bg-[#fffdfa] text-slate-950 hover:border-[#216f61] hover:bg-[#f4fbf7] hover:text-[#216f61]"
@@ -714,13 +714,13 @@ export function OnboardingChat({
                       : text.customPlaceholder
                 }
                 disabled={(completed || isGoalStep) && !showCityInput}
-                className="h-12 min-w-0 flex-1 rounded-full border border-[#dfe4dc] bg-[#fffdfa] px-4 text-[15px] font-medium shadow-inner placeholder:text-slate-400 disabled:opacity-60 sm:text-sm"
+                className="h-12 min-w-0 flex-1 rounded-full border border-[#dfe4dc] bg-[#fffdfa] px-3 text-sm font-medium shadow-inner placeholder:text-slate-400 disabled:opacity-60 sm:px-4"
               />
               <button
                 type="button"
                 onClick={isListening ? stopVoiceInput : startVoiceInput}
                 disabled={completed || isGoalStep}
-                className={`inline-flex size-12 items-center justify-center rounded-full border ${
+                className={`inline-flex size-12 shrink-0 items-center justify-center rounded-full border ${
                   isListening
                     ? "bg-rose-50 text-rose-700"
                     : "bg-[#fffdfa] text-slate-900"
@@ -739,7 +739,7 @@ export function OnboardingChat({
                 disabled={
                   loading || completed || isGoalStep || !input.trim()
                 }
-                className="inline-flex size-12 items-center justify-center rounded-full bg-[#216f61] text-white shadow-[0_10px_20px_rgba(33,111,97,0.24)] disabled:opacity-50"
+                className="inline-flex size-12 shrink-0 items-center justify-center rounded-full bg-[#216f61] text-white shadow-[0_10px_20px_rgba(33,111,97,0.24)] disabled:opacity-50"
                 aria-label="Send answer"
               >
                 <Send className="size-4" aria-hidden="true" />

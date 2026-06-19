@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   AudioLines,
   Brain,
@@ -19,6 +20,7 @@ import {
   Radar,
   Repeat2,
   ShieldCheck,
+  Loader2,
   TrendingUp,
   UserRound,
   UsersRound
@@ -111,8 +113,32 @@ const featureNavItems = [
 ];
 
 export function DashboardNav() {
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [featuresOpen, setFeaturesOpen] = useState(false);
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPendingHref(null);
+    setMenuOpen(false);
+  }, [pathname]);
+
+  function getLinkClass(href: string, compact = false) {
+    const active = pathname === href;
+    const pending = pendingHref === href;
+
+    return `inline-flex ${compact ? "h-9" : "h-10"} items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors ${
+      active
+        ? "bg-emerald-50 text-emerald-900"
+        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+    } ${pending ? "animate-pulse bg-emerald-50 text-emerald-900" : ""}`;
+  }
+
+  function markPending(href: string) {
+    if (href !== pathname) {
+      setPendingHref(href);
+    }
+  }
 
   return (
     <>
@@ -151,9 +177,15 @@ export function DashboardNav() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="inline-flex h-10 items-center gap-2 rounded-md bg-muted/40 px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                  prefetch
+                  onClick={() => markPending(item.href)}
+                  className={getLinkClass(item.href)}
                 >
-                  <Icon className="size-4" aria-hidden="true" />
+                  {pendingHref === item.href ? (
+                    <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Icon className="size-4" aria-hidden="true" />
+                  )}
                   {item.title}
                 </Link>
               );
@@ -170,9 +202,15 @@ export function DashboardNav() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="inline-flex h-10 items-center gap-2 rounded-md bg-muted/40 px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                  prefetch
+                  onClick={() => markPending(item.href)}
+                  className={getLinkClass(item.href)}
                 >
-                  <Icon className="size-4" aria-hidden="true" />
+                  {pendingHref === item.href ? (
+                    <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Icon className="size-4" aria-hidden="true" />
+                  )}
                   {item.title}
                 </Link>
               );
@@ -189,9 +227,15 @@ export function DashboardNav() {
             <Link
               key={item.href}
               href={item.href}
-              className="inline-flex h-10 items-center gap-2 rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              prefetch
+              onClick={() => markPending(item.href)}
+              className={getLinkClass(item.href)}
             >
-              <Icon className="size-4" aria-hidden="true" />
+              {pendingHref === item.href ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <Icon className="size-4" aria-hidden="true" />
+              )}
               {item.title}
             </Link>
           );
@@ -220,9 +264,15 @@ export function DashboardNav() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="inline-flex h-9 items-center gap-2 rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                  prefetch
+                  onClick={() => markPending(item.href)}
+                  className={getLinkClass(item.href, true)}
                 >
-                  <Icon className="size-4" aria-hidden="true" />
+                  {pendingHref === item.href ? (
+                    <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Icon className="size-4" aria-hidden="true" />
+                  )}
                   {item.title}
                 </Link>
               );

@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
 import type { Types } from "mongoose";
+import { cache } from "react";
 
 import { getOrCreateCurrentAppUser } from "@/lib/current-app-user";
 import { FinancialDNAModel } from "@/models";
 
-export async function getCurrentFinancialDNA() {
+export const getCurrentFinancialDNA = cache(async function getCurrentFinancialDNA() {
   const appUser = await getOrCreateCurrentAppUser();
 
   if (!appUser) {
@@ -22,7 +23,7 @@ export async function getCurrentFinancialDNA() {
     appUser,
     financialDNA
   };
-}
+});
 
 export async function requireFinancialDNA() {
   const { appUser, financialDNA } = await getCurrentFinancialDNA();

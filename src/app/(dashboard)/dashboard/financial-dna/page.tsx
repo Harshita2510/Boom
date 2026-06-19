@@ -261,7 +261,7 @@ function FinancialDNAInsights({ profile }: { profile: FinancialDNASnapshot }) {
   return (
     <section className="space-y-5">
       <div className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
-        <article className="rounded-[28px] border border-white/70 bg-white/85 p-6 text-center shadow-sm shadow-slate-200/70 backdrop-blur">
+        <article className="rounded-[22px] border border-white/70 bg-white/85 p-4 text-center shadow-sm shadow-slate-200/70 backdrop-blur sm:rounded-[28px] sm:p-6">
           <div className="mx-auto mb-3 grid size-12 place-items-center rounded-2xl bg-emerald-50 text-emerald-700">
             <Dna className="size-6" aria-hidden="true" />
           </div>
@@ -281,13 +281,13 @@ function FinancialDNAInsights({ profile }: { profile: FinancialDNASnapshot }) {
           </p>
         </article>
 
-        <article className="rounded-[28px] border border-white/70 bg-white/85 p-6 shadow-sm shadow-slate-200/70 backdrop-blur">
-          <div className="flex gap-4">
+        <article className="rounded-[22px] border border-white/70 bg-white/85 p-4 shadow-sm shadow-slate-200/70 backdrop-blur sm:rounded-[28px] sm:p-6">
+          <div className="flex flex-col gap-3 min-[420px]:flex-row min-[420px]:gap-4">
             <div className={`grid size-12 shrink-0 place-items-center rounded-2xl ${risk.bubble}`}>
               <RiskIcon className="size-6" aria-hidden="true" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold tracking-tight text-slate-950">
+              <h2 className="text-lg font-semibold tracking-tight text-slate-950 sm:text-xl">
                 {risk.label}
               </h2>
               <p className="mt-1 text-sm leading-6 text-slate-600">{risk.text}</p>
@@ -296,7 +296,7 @@ function FinancialDNAInsights({ profile }: { profile: FinancialDNASnapshot }) {
 
           <div className="my-5 h-px bg-slate-100" />
 
-          <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 text-sm min-[420px]:grid-cols-2 sm:grid-cols-3 sm:gap-4">
             {[
               ["Age", formatValue(profile.ageRange)],
               ["City", formatValue(profile.city)],
@@ -305,9 +305,9 @@ function FinancialDNAInsights({ profile }: { profile: FinancialDNASnapshot }) {
               ["Monthly", metrics.income ? rupee.format(metrics.income) : formatValue(profile.monthlyIncomeRange)],
               ["Dependents", formatValue(profile.dependents ?? 0)]
             ].map(([label, value]) => (
-              <div key={label} className="rounded-2xl bg-slate-50 px-4 py-3">
+              <div key={label} className="min-w-0 rounded-2xl bg-slate-50 px-4 py-3">
                 <p className="text-xs font-semibold uppercase text-slate-500">{label}</p>
-                <p className="mt-1 font-semibold text-slate-950">{value}</p>
+                <p className="mt-1 break-words font-semibold text-slate-950">{value}</p>
               </div>
             ))}
           </div>
@@ -320,7 +320,7 @@ function FinancialDNAInsights({ profile }: { profile: FinancialDNASnapshot }) {
                 {goals.map((goal) => (
                   <span
                     key={goal}
-                    className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-900"
+                    className="max-w-full rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-900"
                   >
                     {goalEmoji[goal] ?? "🎯"} {goal}
                   </span>
@@ -354,20 +354,20 @@ function FinancialDNAInsights({ profile }: { profile: FinancialDNASnapshot }) {
         ].map(({ Icon, label, subline, value }) => (
           <article
             key={label}
-            className="rounded-[24px] border border-white/70 bg-white/85 p-5 shadow-sm shadow-slate-200/70 backdrop-blur"
+            className="rounded-[22px] border border-white/70 bg-white/85 p-4 shadow-sm shadow-slate-200/70 backdrop-blur sm:rounded-[24px] sm:p-5"
           >
             <div className="grid size-11 place-items-center rounded-2xl bg-slate-950 text-white">
               <Icon className="size-5" aria-hidden="true" />
             </div>
             <p className="mt-4 text-sm font-semibold text-slate-500">{label}</p>
-            <p className="mt-1 text-2xl font-bold tracking-tight text-slate-950">{value}</p>
+            <p className="mt-1 text-xl font-bold tracking-tight text-slate-950 sm:text-2xl">{value}</p>
             <p className="mt-1 text-sm text-slate-500">{subline}</p>
           </article>
         ))}
       </div>
 
-      <article className="rounded-[28px] border border-white/70 bg-white/85 p-6 shadow-sm shadow-slate-200/70 backdrop-blur">
-        <h2 className="text-xl font-semibold tracking-tight text-slate-950">
+      <article className="rounded-[22px] border border-white/70 bg-white/85 p-4 shadow-sm shadow-slate-200/70 backdrop-blur sm:rounded-[28px] sm:p-6">
+        <h2 className="text-lg font-semibold tracking-tight text-slate-950 sm:text-xl">
           DNA Breakdown
         </h2>
         <div className="mt-5 space-y-4">
@@ -376,9 +376,9 @@ function FinancialDNAInsights({ profile }: { profile: FinancialDNASnapshot }) {
 
             return (
               <div key={item.label}>
-                <div className="mb-2 flex items-center justify-between gap-3 text-sm">
-                  <span className="font-semibold text-slate-700">{item.label}</span>
-                  <span className="font-bold text-slate-950">
+                <div className="mb-2 flex items-start justify-between gap-3 text-sm">
+                  <span className="min-w-0 font-semibold text-slate-700">{item.label}</span>
+                  <span className="shrink-0 font-bold text-slate-950">
                     {item.score}/100 {color.dot}
                   </span>
                 </div>
@@ -394,17 +394,17 @@ function FinancialDNAInsights({ profile }: { profile: FinancialDNASnapshot }) {
         </div>
       </article>
 
-      <article className="rounded-[28px] border border-amber-100 bg-[linear-gradient(135deg,#fff7ed_0%,#ecfeff_100%)] p-6 shadow-sm shadow-slate-200/70">
-        <div className="flex gap-4">
+      <article className="rounded-[22px] border border-amber-100 bg-[linear-gradient(135deg,#fff7ed_0%,#ecfeff_100%)] p-4 shadow-sm shadow-slate-200/70 sm:rounded-[28px] sm:p-6">
+        <div className="flex flex-col gap-4 min-[420px]:flex-row">
           <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-white text-amber-700 shadow-sm">
             <PiggyBank className="size-6" aria-hidden="true" />
           </div>
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-xs font-bold uppercase text-slate-600">
+            <div className="inline-flex max-w-full items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-xs font-bold uppercase text-slate-600">
               <Sparkles className="size-3.5" aria-hidden="true" />
               Top Recommendation for You
             </div>
-            <p className="mt-3 text-base font-semibold leading-7 text-slate-950">
+            <p className="mt-3 text-sm font-semibold leading-6 text-slate-950 sm:text-base sm:leading-7">
               {getRecommendation(weakest, profile)}
             </p>
           </div>
@@ -432,10 +432,10 @@ export default async function FinancialDNAPage() {
   const existingSummary = financialDNA?.summary ?? "";
 
   return (
-    <main className="space-y-6">
+    <main className="space-y-5 sm:space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-950">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
             Financial DNA
           </h1>
           <p className="mt-2 text-sm leading-6 text-slate-600">

@@ -16,22 +16,22 @@ export default async function DashboardLayout({
   await auth.protect();
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-screen overflow-x-hidden bg-muted/30">
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
-        <div className="container flex h-16 items-center justify-between gap-4">
-          <Link href="/dashboard" className="font-semibold tracking-tight">
+        <div className="container flex h-16 items-center justify-between gap-3 px-4 sm:px-6">
+          <Link href="/dashboard" className="min-w-0 truncate font-semibold tracking-tight">
             {siteConfig.name}
           </Link>
           <DashboardUserButton />
         </div>
       </header>
 
-      <div className="container grid gap-4 py-3 sm:py-5 md:grid-cols-[220px_1fr] md:gap-6 md:py-6">
-        <aside className="rounded-lg border bg-background p-2 md:sticky md:top-20 md:h-fit">
+      <div className="container grid gap-3 px-3 py-3 sm:gap-4 sm:px-6 sm:py-5 md:grid-cols-[220px_1fr] md:gap-6 md:py-6">
+        <aside className="rounded-2xl border bg-background p-2 md:sticky md:top-20 md:h-fit">
           <DashboardNav />
         </aside>
 
-        <div className="min-w-0 rounded-lg border bg-background p-4 sm:p-6">
+        <div className="min-w-0 overflow-hidden rounded-2xl border bg-background p-3 sm:p-6">
           {children}
         </div>
       </div>

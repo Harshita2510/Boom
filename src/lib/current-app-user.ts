@@ -1,8 +1,9 @@
 import { currentUser } from "@clerk/nextjs/server";
+import { cache } from "react";
 
 import { UserModel } from "@/models";
 
-export async function getOrCreateCurrentAppUser() {
+export const getOrCreateCurrentAppUser = cache(async function getOrCreateCurrentAppUser() {
   const clerkUser = await currentUser();
 
   if (!clerkUser) {
@@ -31,4 +32,4 @@ export async function getOrCreateCurrentAppUser() {
       upsert: true
     }
   );
-}
+});
