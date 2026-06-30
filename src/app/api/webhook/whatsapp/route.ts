@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
-import { orchestrate } from "../../../../agents/masterOrchestrator";
 
-type WhatsAppMessage = {
+import { orchestrate } from "../../../../agents/masterOrchestrator";
+import { connectToDatabase } from "@/lib/mongoose";
+import { getOrCreateChannelUser } from "@/lib/voice-transaction";
+
+type WhatsAppCloudMessage = {
   from?: string;
   id?: string;
   text?: {
@@ -10,7 +13,14 @@ type WhatsAppMessage = {
   type?: string;
 };
 
-function getIncomingTextMessages(body: any) {
+type IncomingWhatsAppText = {
+  from: string;
+  sessionId: string;
+  messageId: string | null;
+  text: string;
+};
+
+function getIncomingTextMessages(body: any): IncomingWhatsAppText[] {
   const entries = Array.isArray(body?.entry) ? body.entry : [];
 
   return entries.flatMap((entry: any) => {
@@ -20,31 +30,83 @@ function getIncomingTextMessages(body: any) {
       const messages = Array.isArray(change?.value?.messages) ? change.value.messages : [];
 
       return messages
-        .filter((message: WhatsAppMessage) => message.type === "text" && message.from && message.text?.body)
-        .map((message: WhatsAppMessage) => ({
+        .filter(
+          (message: WhatsAppCloudMessage) =>
+            message.type === "text" &&
+            typeof message.from === "string" &&
+            typeof message.text?.body === "string" &&
+            message.text.body.trim().length > 0
+        )
+        .map((message: WhatsAppCloudMessage) => ({
           from: String(message.from),
+          sessionId: `${message.from}@s.whatsapp.net`,
           messageId: message.id ? String(message.id) : null,
-          text: String(message.text?.body),
+          text: String(message.text?.body).trim()
         }));
     });
   });
 }
 
-async function sendWhatsAppText(to: string, text: string) {
+function getWhatsAppCloudConfig() {
   const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-  const graphApiVersion = process.env.WHATSAPP_GRAPH_API_VERSION || "v25.0";
+  const graphApiVersion = process.env.WHATSAPP_GRAPH_API_VERSION || "v22.0";
 
   if (!accessToken || !phoneNumberId) {
     throw new Error("Missing WHATSAPP_ACCESS_TOKEN or WHATSAPP_PHONE_NUMBER_ID");
   }
 
-  const response = await fetch(`https://graph.facebook.com/${graphApiVersion}/${phoneNumberId}/messages`, {
+  return {
+    accessToken,
+    phoneNumberId,
+    graphApiVersion
+  };
+}
+
+function getGraphMessagesUrl() {
+  const { phoneNumberId, graphApiVersion } = getWhatsAppCloudConfig();
+  return `https://graph.facebook.com/${graphApiVersion}/${phoneNumberId}/messages`;
+}
+
+function getGraphHeaders() {
+  const { accessToken } = getWhatsAppCloudConfig();
+
+  return {
+    Authorization: `Bearer ${accessToken}`,
+    "Content-Type": "application/json"
+  };
+}
+
+async function markMessageAsRead(messageId: string | null) {
+  if (!messageId) {
+    return;
+  }
+
+  const response = await fetch(getGraphMessagesUrl(), {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
+    headers: getGraphHeaders(),
+    body: JSON.stringify({
+      messaging_product: "whatsapp",
+      status: "read",
+      message_id: messageId
+    })
+  });
+
+  if (!response.ok) {
+    const result = await response.text();
+    console.warn(`[whatsapp webhook] read receipt failed (${response.status}): ${result}`);
+  }
+}
+
+async function sendWhatsAppText(to: string, text: string) {
+  if (process.env.WHATSAPP_DRY_RUN === "true") {
+    console.log("[whatsapp webhook] dry run reply:", { to, text });
+    return JSON.stringify({ dryRun: true });
+  }
+
+  const response = await fetch(getGraphMessagesUrl(), {
+    method: "POST",
+    headers: getGraphHeaders(),
     body: JSON.stringify({
       messaging_product: "whatsapp",
       recipient_type: "individual",
@@ -52,9 +114,9 @@ async function sendWhatsAppText(to: string, text: string) {
       type: "text",
       text: {
         preview_url: false,
-        body: text.slice(0, 4096),
-      },
-    }),
+        body: text.slice(0, 4096)
+      }
+    })
   });
 
   const result = await response.text();
@@ -66,27 +128,33 @@ async function sendWhatsAppText(to: string, text: string) {
   return result;
 }
 
-// GET /api/webhook/whatsapp
-// - Accepts hub.mode, hub.verify_token, hub.challenge (and variants)
-// - If mode === 'subscribe' and verify_token matches env, return challenge (200)
-// - Otherwise return 403
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function getHumanDelayMs() {
+  const configuredDelay = Number(process.env.WHATSAPP_REPLY_DELAY_MS);
+
+  if (Number.isFinite(configuredDelay) && configuredDelay > 0) {
+    return configuredDelay;
+  }
+
+  return 1000 + Math.floor(Math.random() * 1001);
+}
+
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
     const params = url.searchParams;
 
-    const mode = params.get("hub.mode") || params.get("hub_mode") || params.get("mode");
-    const token = params.get("hub.verify_token") || params.get("hub_verify_token") || params.get("verify_token");
-    const challenge = params.get("hub.challenge") || params.get("hub_challenge") || params.get("challenge");
+    const mode = params.get("hub.mode");
+    const token = params.get("hub.verify_token");
+    const challenge = params.get("hub.challenge");
 
-    console.log("[whatsapp webhook] GET verification request:", { mode, token, challenge });
-
-    if (String(mode) === "subscribe" && String(token) === String(process.env.WHATSAPP_VERIFY_TOKEN)) {
-      console.log("[whatsapp webhook] verification success");
+    if (mode === "subscribe" && token === process.env.WHATSAPP_VERIFY_TOKEN) {
       return new NextResponse(challenge ?? "", { status: 200 });
     }
 
-    console.warn("[whatsapp webhook] verification failed", { mode, token });
     return new NextResponse("Forbidden", { status: 403 });
   } catch (err) {
     console.error("[whatsapp webhook] GET error", err);
@@ -96,49 +164,44 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    let body: any = null;
-    try {
-      body = await req.json();
-    } catch (e) {
-      // If body is not JSON, attempt to read text
-      try {
-        const text = await req.text();
-        body = text;
-      } catch (e2) {
-        body = null;
-      }
-    }
-
-    console.log("[whatsapp webhook] Incoming POST body:", JSON.stringify(body, null, 2));
-
+    const body = await req.json();
     const messages = getIncomingTextMessages(body);
+    const responses = [];
 
     for (const message of messages) {
-      console.log("[whatsapp webhook] Processing text message:", message);
-      const agentResponse = await orchestrate(message.text, {
-        channel: "whatsapp",
-        externalUserId: message.from
+      console.log("[whatsapp webhook] incoming Cloud API message:", {
+        from: message.from,
+        messageId: message.messageId
       });
-      let reply = agentResponse.text;
 
-      try {
-        await sendWhatsAppText(message.from, reply);
-        console.log("[whatsapp webhook] Sent agent reply:", {
-          to: message.from,
-          agent: agentResponse.agent,
-          intent: agentResponse.intent,
-        });
-      } catch (sendError) {
-        console.error("[whatsapp webhook] Reply send failed:", {
-          to: message.from,
-          error: sendError
-        });
-      }
+      await connectToDatabase();
+
+      const appUser = await getOrCreateChannelUser({
+        channel: "whatsapp",
+        externalUserId: message.sessionId
+      });
+
+      await markMessageAsRead(message.messageId);
+
+      const agentResponse = await orchestrate(message.text, {
+        appUserId: appUser._id,
+        channel: "whatsapp",
+        externalUserId: message.sessionId
+      });
+
+      await sleep(getHumanDelayMs());
+      await sendWhatsAppText(message.from, agentResponse.text);
+
+      responses.push({
+        from: message.from,
+        messageId: message.messageId,
+        agentResponse
+      });
     }
 
-    return new NextResponse(null, { status: 200 });
+    return NextResponse.json({ ok: true, responses });
   } catch (err) {
     console.error("[whatsapp webhook] POST error", err);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

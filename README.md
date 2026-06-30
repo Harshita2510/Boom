@@ -35,47 +35,55 @@ npm run typecheck
 npm run format
 ```
 
-## WhatsApp Cloud API Webhook
+## WhatsApp Cloud API Sandbox Webhook
 
-The WhatsApp webhook backend is a separate Express server.
+The WhatsApp webhook is handled by the Next.js API route.
 
 ```bash
-npm run dev:whatsapp
+npm run dev
 ```
 
 Default local URL:
 
 ```text
-http://localhost:4000/webhook/whatsapp
+http://localhost:3000/api/webhook/whatsapp
 ```
 
-Local verification test:
+Local health check:
 
 ```text
-http://localhost:4000/webhook/whatsapp?hub.mode=subscribe&hub.verify_token=YOUR_VERIFY_TOKEN&hub.challenge=boom_test
+http://localhost:3000/api/webhook/whatsapp
 ```
 
-Replace `YOUR_VERIFY_TOKEN` with the exact value from `.env.local`.
-
-For Meta webhook verification, expose it with an HTTPS tunnel such as ngrok and
-use the generated forwarding URL:
+For a free WhatsApp demo, use Meta's WhatsApp Cloud API sandbox/test setup and
+expose this app with an HTTPS tunnel such as ngrok:
 
 ```bash
-ngrok http 4000
+ngrok http 3000
 ```
 
 Example callback URL format:
 
 ```text
-https://abc123.ngrok-free.app/webhook/whatsapp
+https://abc123.ngrok-free.app/api/webhook/whatsapp
 ```
 
 Required environment variables:
 
 ```bash
-WHATSAPP_VERIFY_TOKEN=
-WHATSAPP_ACCESS_TOKEN=
-WHATSAPP_PHONE_NUMBER_ID=
+WHATSAPP_VERIFY_TOKEN=choose_any_random_string
+WHATSAPP_ACCESS_TOKEN=from_meta_whatsapp_getting_started
+WHATSAPP_PHONE_NUMBER_ID=from_meta_whatsapp_getting_started
 WHATSAPP_GRAPH_API_VERSION=v22.0
-WHATSAPP_SERVER_PORT=4000
+WHATSAPP_REPLY_DELAY_MS=1500
 ```
+
+Meta sandbox setup:
+
+1. Create a Meta Developer app and add WhatsApp.
+2. In WhatsApp > API Setup, copy the temporary access token into `WHATSAPP_ACCESS_TOKEN`.
+3. Copy the test phone number id into `WHATSAPP_PHONE_NUMBER_ID`.
+4. Add your own phone number as an allowed test recipient.
+5. Set webhook callback URL to `/api/webhook/whatsapp`.
+6. Use the same `WHATSAPP_VERIFY_TOKEN` value in Meta webhook verification.
+7. Subscribe the webhook to `messages`.
