@@ -3,9 +3,12 @@ import type { Types } from "mongoose";
 import { cache } from "react";
 
 import { getOrCreateCurrentAppUser } from "@/lib/current-app-user";
+import { connectToDatabase } from "@/lib/mongoose";
 import { FinancialDNAModel } from "@/models";
 
 export const getCurrentFinancialDNA = cache(async function getCurrentFinancialDNA() {
+  await connectToDatabase();
+
   const appUser = await getOrCreateCurrentAppUser();
 
   if (!appUser) {

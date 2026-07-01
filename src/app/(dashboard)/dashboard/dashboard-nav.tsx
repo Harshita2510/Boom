@@ -112,11 +112,19 @@ const featureNavItems = [
   }
 ];
 
-export function DashboardNav() {
+export function DashboardNav({
+  hasFinancialDNA
+}: {
+  hasFinancialDNA: boolean;
+}) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [featuresOpen, setFeaturesOpen] = useState(false);
   const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const visiblePrimaryNavItems = hasFinancialDNA
+    ? primaryNavItems
+    : primaryNavItems.filter((item) => item.href === "/dashboard/financial-dna");
+  const visibleFeatureNavItems = hasFinancialDNA ? featureNavItems : [];
 
   useEffect(() => {
     setPendingHref(null);
@@ -143,7 +151,7 @@ export function DashboardNav() {
   return (
     <>
       <nav className="md:hidden">
-        <div className="grid grid-cols-2 gap-2">
+        <div className={hasFinancialDNA ? "grid grid-cols-2 gap-2" : "grid gap-2"}>
           <button
             type="button"
             onClick={() => setMenuOpen((value) => !value)}
@@ -153,24 +161,26 @@ export function DashboardNav() {
             <Menu className="size-4" aria-hidden="true" />
             Menu
           </button>
-          <button
-            type="button"
-            onClick={() => setFeaturesOpen((value) => !value)}
-            aria-expanded={featuresOpen}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border bg-background px-3 text-sm font-semibold text-muted-foreground"
-          >
-            {featuresOpen ? (
-              <ChevronDown className="size-4" aria-hidden="true" />
-            ) : (
-              <ChevronRight className="size-4" aria-hidden="true" />
-            )}
-            Features
-          </button>
+          {hasFinancialDNA ? (
+            <button
+              type="button"
+              onClick={() => setFeaturesOpen((value) => !value)}
+              aria-expanded={featuresOpen}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-md border bg-background px-3 text-sm font-semibold text-muted-foreground"
+            >
+              {featuresOpen ? (
+                <ChevronDown className="size-4" aria-hidden="true" />
+              ) : (
+                <ChevronRight className="size-4" aria-hidden="true" />
+              )}
+              Features
+            </button>
+          ) : null}
         </div>
 
         {menuOpen ? (
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
-            {primaryNavItems.map((item) => {
+            {visiblePrimaryNavItems.map((item) => {
               const Icon = item.icon;
 
               return (
@@ -195,7 +205,7 @@ export function DashboardNav() {
 
         {featuresOpen ? (
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
-            {featureNavItems.map((item) => {
+            {visibleFeatureNavItems.map((item) => {
               const Icon = item.icon;
 
               return (
@@ -220,7 +230,7 @@ export function DashboardNav() {
       </nav>
 
       <nav className="hidden gap-1 md:flex md:flex-col">
-        {primaryNavItems.map((item) => {
+        {visiblePrimaryNavItems.map((item) => {
           const Icon = item.icon;
 
           return (
@@ -241,23 +251,25 @@ export function DashboardNav() {
           );
         })}
 
-        <button
-          type="button"
-          onClick={() => setFeaturesOpen((value) => !value)}
-          aria-expanded={featuresOpen}
-          className="inline-flex h-10 w-full items-center gap-2 rounded-md px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-        >
-          {featuresOpen ? (
-            <ChevronDown className="size-4" aria-hidden="true" />
-          ) : (
-            <ChevronRight className="size-4" aria-hidden="true" />
-          )}
+        {hasFinancialDNA ? (
+          <button
+            type="button"
+            onClick={() => setFeaturesOpen((value) => !value)}
+            aria-expanded={featuresOpen}
+            className="inline-flex h-10 w-full items-center gap-2 rounded-md px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+          >
+            {featuresOpen ? (
+              <ChevronDown className="size-4" aria-hidden="true" />
+            ) : (
+              <ChevronRight className="size-4" aria-hidden="true" />
+            )}
             Features
-        </button>
+          </button>
+        ) : null}
 
         {featuresOpen ? (
           <div className="mt-1 flex flex-col gap-1 border-l pl-2">
-            {featureNavItems.map((item) => {
+            {visibleFeatureNavItems.map((item) => {
               const Icon = item.icon;
 
               return (

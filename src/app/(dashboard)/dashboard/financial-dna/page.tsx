@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import {
   AlertTriangle,
   Banknote,
@@ -414,7 +415,13 @@ function FinancialDNAInsights({ profile }: { profile: FinancialDNASnapshot }) {
   );
 }
 
-export default async function FinancialDNAPage() {
+export default async function FinancialDNAPage({
+  searchParams
+}: {
+  searchParams?: Promise<{ update?: string }>;
+}) {
+  const params = await searchParams;
+  const isUpdating = params?.update === "1";
   const clerkUser = await currentUser();
   let financialDNA: FinancialDNASnapshot | null = null;
 
@@ -430,6 +437,7 @@ export default async function FinancialDNAPage() {
   }
 
   const existingSummary = financialDNA?.summary ?? "";
+  const shouldShowChat = !financialDNA || isUpdating;
 
   return (
     <main className="space-y-5 sm:space-y-6">
@@ -442,12 +450,26 @@ export default async function FinancialDNAPage() {
             Your unique financial personality and risk profile.
           </p>
         </div>
-        <RetakeDNAButton userId={clerkUser?.id} />
       </div>
 
-      <OnboardingChat initialSummary={existingSummary} userId={clerkUser?.id} />
+      {!financialDNA ? (
+        <Suspense fallback={null}>
+          <OnboardingChat initialSummary={existingSummary} userId={clerkUser?.id} />
+        </Suspense>
+      ) : null}
 
       {financialDNA ? <FinancialDNAInsights profile={financialDNA} /> : null}
+
+      {financialDNA ? (
+        <div className="flex flex-col gap-4 border-t border-slate-100 pt-4">
+          <RetakeDNAButton userId={clerkUser?.id} />
+          {shouldShowChat ? (
+            <Suspense fallback={null}>
+              <OnboardingChat initialSummary={existingSummary} userId={clerkUser?.id} />
+            </Suspense>
+          ) : null}
+        </div>
+      ) : null}
     </main>
   );
 }

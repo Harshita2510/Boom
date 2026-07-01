@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:arthsathi": "next dev --port 3005",
     "dev:whatsapp": "node server/whatsapp.js",
     "build": "next build",
     "start": "next start",

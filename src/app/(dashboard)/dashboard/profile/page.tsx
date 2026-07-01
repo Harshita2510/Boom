@@ -1,8 +1,12 @@
 import { currentUser } from "@clerk/nextjs/server";
 
+import { requireFinancialDNA } from "@/lib/financial-dna-gate";
+
 export const dynamic = "force-dynamic";
 
 export default async function ProfilePage() {
+  await requireFinancialDNA();
+
   const user = await currentUser();
   const primaryEmail = user?.emailAddresses.find(
     (email) => email.id === user.primaryEmailAddressId

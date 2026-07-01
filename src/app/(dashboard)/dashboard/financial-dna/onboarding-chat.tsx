@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Bot,
   CheckCircle2,
   Loader2,
   Mic,
-  Pencil,
   Send,
   Sparkles,
   Square
@@ -281,6 +281,8 @@ export function OnboardingChat({
   initialSummary?: string;
   userId?: string;
 }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [language, setLanguage] = useState<Language>("en");
   const [messages, setMessages] = useState<Msg[]>([
     {
@@ -296,6 +298,8 @@ export function OnboardingChat({
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const recognitionRef = useRef<DNARecognition | null>(null);
+  const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const updateStartedRef = useRef(false);
   const activeStep = getActiveStep(messages, completed);
   const isGoalStep = activeStep === 9 && !completed;
   const progress = getProgress(activeStep, completed);
@@ -340,8 +344,23 @@ export function OnboardingChat({
   useEffect(() => {
     return () => {
       recognitionRef.current?.stop();
+      if (redirectTimerRef.current) {
+        clearTimeout(redirectTimerRef.current);
+      }
     };
   }, []);
+
+  useEffect(() => {
+    if (
+      searchParams.get("update") === "1" &&
+      completed &&
+      !loading &&
+      !updateStartedRef.current
+    ) {
+      updateStartedRef.current = true;
+      void startUpdate();
+    }
+  }, [completed, loading, searchParams]);
 
   async function send(rawMessage = input, displayMessage?: string) {
     const msg = rawMessage.trim();
@@ -385,6 +404,12 @@ export function OnboardingChat({
             : data.reply
         }
       ]);
+
+      if (data.completed) {
+        redirectTimerRef.current = setTimeout(() => {
+          router.replace("/dashboard");
+        }, 1200);
+      }
     } catch (error) {
       setMessages((current) => [
         ...current,
@@ -420,14 +445,15 @@ export function OnboardingChat({
         throw new Error(data?.error || "Server error");
       }
 
-      setCompleted(false);
+      setCompleted(Boolean(data.completed));
       setShowCityInput(false);
       setSelectedGoals([]);
       setInput("");
       setMessages([
         {
+          meta: data,
           role: "agent",
-          text: text.welcomeMessage
+          text: data.reply ?? text.welcomeMessage
         }
       ]);
     } catch (error) {
@@ -562,15 +588,6 @@ export function OnboardingChat({
               <CheckCircle2 className="size-4" aria-hidden="true" />
               {text.completedStatus}
             </div>
-            <button
-              type="button"
-              onClick={startUpdate}
-              disabled={loading}
-              className="inline-flex h-9 w-fit items-center gap-2 rounded-md border border-emerald-200 bg-white px-3 text-sm font-semibold text-emerald-900 disabled:opacity-60"
-            >
-              <Pencil className="size-4" aria-hidden="true" />
-              {text.updateDNA}
-            </button>
           </div>
         </div>
       ) : null}

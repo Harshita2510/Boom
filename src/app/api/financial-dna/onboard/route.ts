@@ -8,6 +8,7 @@ type IncomeType =
   | "salaried"
   | "business"
   | "freelance"
+  | "homemaker"
   | "student"
   | "retired"
   | "other";
@@ -32,12 +33,14 @@ type DNAAnswers = {
 };
 
 const TOTAL_STEPS = 11;
+const UPDATE_STEP = 11;
 
 const incomeTypeByMessage: { pattern: RegExp; type: IncomeType; occupation: string }[] = [
   { occupation: "salaried professional", pattern: /salaried/i, type: "salaried" },
   { occupation: "self-employed professional", pattern: /self-employed|self employed/i, type: "other" },
   { occupation: "business owner", pattern: /business/i, type: "business" },
   { occupation: "freelancer", pattern: /freelance/i, type: "freelance" },
+  { occupation: "homemaker", pattern: /homemaker|home maker/i, type: "homemaker" },
   { occupation: "retired", pattern: /retired/i, type: "retired" },
   { occupation: "student", pattern: /student/i, type: "student" }
 ];
@@ -136,12 +139,112 @@ function getRiskAppetite(message: string): RiskAppetite | undefined {
   return undefined;
 }
 
+function getExistingAnswers(input: {
+  dna: Record<string, any>;
+  name?: string;
+}): DNAAnswers {
+  return {
+    ageRange: input.dna.ageRange,
+    city: input.dna.city,
+    dependents: input.dna.dependents,
+    emiAmount: input.dna.monthlyEmi,
+    emiRange: input.dna.monthlyEmiRange,
+    financialGoals: input.dna.financialGoals,
+    hasLoans: input.dna.hasLoans,
+    incomeAmount: input.dna.monthlyIncome,
+    incomeRange: input.dna.monthlyIncomeRange,
+    incomeType: input.dna.incomeType,
+    lifeStage: input.dna.lifeStage,
+    name: input.name,
+    occupation: input.dna.occupation,
+    riskAppetite: input.dna.riskAppetite
+  };
+}
+
+function mergeUpdateAnswers(current: DNAAnswers, message: string): DNAAnswers {
+  const next = { ...current };
+  const trimmed = message.trim();
+
+  if (!trimmed) {
+    return next;
+  }
+
+  const lower = trimmed.toLowerCase();
+  const riskAppetite = getRiskAppetite(trimmed);
+  const incomeType = incomeTypeByMessage.find((item) => item.pattern.test(trimmed));
+  const loanStatus = getLoanStatus(trimmed);
+
+  if (/\bcity\b|based|live|moved|shifted|relocat/i.test(trimmed)) {
+    const cityMatch = trimmed.match(
+      /(?:city is|based in|live in|moved to|shifted to|relocated to)\s+([a-zA-Z\s]+?)(?:,|\.|$)/i
+    );
+
+    if (cityMatch?.[1]) {
+      next.city = cityMatch[1].trim();
+    }
+  }
+
+  if (/income|salary|earn|earning|monthly/i.test(trimmed)) {
+    next.incomeRange = trimmed;
+    next.incomeAmount = getIncomeAmount(trimmed);
+  }
+
+  if (incomeType) {
+    next.incomeType = incomeType.type;
+    next.occupation = incomeType.occupation;
+  }
+
+  if (/dependent|dependents|parents|children|kids/i.test(trimmed)) {
+    next.dependents = getDependents(trimmed);
+  }
+
+  if (loanStatus !== undefined || /loan|emi|debt/i.test(trimmed)) {
+    next.hasLoans = loanStatus ?? true;
+    if (next.hasLoans) {
+      next.emiRange = trimmed;
+      next.emiAmount = getEmiAmount(trimmed);
+    } else {
+      next.emiRange = "No EMI";
+      next.emiAmount = 0;
+    }
+  }
+
+  if (/goal|goals|want to|planning to/i.test(lower)) {
+    const goalsText = trimmed
+      .replace(/^(my\s+)?(main\s+)?financial\s+goals?\s+(are|is)\s+/i, "")
+      .replace(/^goals?\s+(are|is)\s+/i, "");
+    const goals = goalsText
+      .split(/,| and /i)
+      .map((goal) => goal.trim())
+      .filter(Boolean)
+      .slice(0, 4);
+
+    if (goals.length) {
+      next.financialGoals = goals;
+    }
+  }
+
+  if (riskAppetite) {
+    next.riskAppetite = riskAppetite;
+  }
+
+  if (/single|married|kids|parent|nester/i.test(trimmed)) {
+    next.lifeStage = trimmed;
+  }
+
+  return next;
+}
+
 function mergeAnswers(current: DNAAnswers, message: string, step: number): DNAAnswers {
   const next = { ...current };
   const trimmed = message.trim();
 
   if (!trimmed) {
     return next;
+  }
+
+  if (step === UPDATE_STEP) {
+    return mergeUpdateAnswers(current, trimmed);
   }
 
   if (step === 0) {
@@ -356,6 +459,29 @@ export async function POST(req: Request) {
     }
 
     if (reset === true) {
+      const existing = await FinancialDNAModel.findOne({ userId: appUserId }).lean<Record<string, any> | null>();
+
+      if (existing) {
+        const answers = getExistingAnswers({
+          dna: existing,
+          name: appUser.firstName
+        });
+
+        onboard.completed = false;
+        onboard.step = UPDATE_STEP;
+        onboard.answers = answers;
+        onboard.markModified("answers");
+        await onboard.save();
+
+        return NextResponse.json({
+          answers,
+          completed: false,
+          reply:
+            "Tell me only what changed in your Financial DNA. For example: income is 80k, city is Pune, goals are home and retirement, risk is moderate.",
+          step: UPDATE_STEP
+        });
+      }
+
       onboard.completed = false;
       onboard.step = 0;
       onboard.answers = {};

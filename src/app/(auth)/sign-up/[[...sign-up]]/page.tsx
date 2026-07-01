@@ -13,7 +13,8 @@ export default function SignUpPage() {
         routing="path"
         path="/sign-up"
         signInUrl="/sign-in"
-        fallbackRedirectUrl="/dashboard"
+        forceRedirectUrl="/dashboard/financial-dna"
+        fallbackRedirectUrl="/dashboard/financial-dna"
       />
     </main>
   );

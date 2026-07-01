@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { MessageCircle } from "lucide-react";
 
 import { siteConfig } from "@/config/site";
+import { getCurrentFinancialDNA } from "@/lib/financial-dna-gate";
 import { DashboardNav } from "./dashboard-nav";
 import { DashboardUserButton } from "./dashboard-user-button";
 
@@ -14,6 +15,8 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }>) {
   await auth.protect();
+  const { financialDNA } = await getCurrentFinancialDNA();
+  const hasFinancialDNA = Boolean(financialDNA);
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-muted/30">
@@ -28,7 +31,7 @@ export default async function DashboardLayout({
 
       <div className="container grid gap-3 px-3 py-3 sm:gap-4 sm:px-6 sm:py-5 md:grid-cols-[220px_1fr] md:gap-6 md:py-6">
         <aside className="rounded-2xl border bg-background p-2 md:sticky md:top-20 md:h-fit">
-          <DashboardNav />
+          <DashboardNav hasFinancialDNA={hasFinancialDNA} />
         </aside>
 
         <div className="min-w-0 overflow-hidden rounded-2xl border bg-background p-3 sm:p-6">
@@ -36,12 +39,13 @@ export default async function DashboardLayout({
         </div>
       </div>
 
-      {/* Chat floating button */}
-      <div className="fixed bottom-4 right-4 z-50 sm:bottom-6 sm:right-6">
-        <Link href="/chat" aria-label="Open chat" className="inline-flex size-12 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition hover:bg-blue-700 sm:size-14">
-          <MessageCircle className="size-5 sm:size-6" />
-        </Link>
-      </div>
+      {hasFinancialDNA ? (
+        <div className="fixed bottom-4 right-4 z-50 sm:bottom-6 sm:right-6">
+          <Link href="/chat" aria-label="Open chat" className="inline-flex size-12 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition hover:bg-blue-700 sm:size-14">
+            <MessageCircle className="size-5 sm:size-6" />
+          </Link>
+        </div>
+      ) : null}
     </div>
   );
 }
