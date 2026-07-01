@@ -10,11 +10,14 @@ import {
   TrendingUp
 } from "lucide-react";
 import { currentUser } from "@clerk/nextjs/server";
+import type { Types } from "mongoose";
 
+import { LanguageText } from "@/components/language-text";
 import { connectToDatabase } from "@/lib/mongoose";
 import { FinancialDNAModel, UserModel } from "@/models";
 
 import { OnboardingChat } from "./onboarding-chat";
+import { PreferredLanguageSelect } from "./preferred-language-select";
 import { RetakeDNAButton } from "./retake-dna-button";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +36,11 @@ type FinancialDNASnapshot = {
   occupation?: string;
   riskAppetite?: "low" | "medium" | "high";
   summary?: string;
+};
+
+type AppUserSnapshot = {
+  _id: Types.ObjectId;
+  preferredLanguage?: string;
 };
 
 const rupee = new Intl.NumberFormat("en-IN", {
@@ -424,10 +432,11 @@ export default async function FinancialDNAPage({
   const isUpdating = params?.update === "1";
   const clerkUser = await currentUser();
   let financialDNA: FinancialDNASnapshot | null = null;
+  let appUser: AppUserSnapshot | null = null;
 
   if (clerkUser) {
     await connectToDatabase();
-    const appUser = await UserModel.findOne({ clerkId: clerkUser.id });
+    appUser = await UserModel.findOne({ clerkId: clerkUser.id }).lean<AppUserSnapshot | null>();
 
     if (appUser) {
       financialDNA = await FinancialDNAModel.findOne({
@@ -444,11 +453,15 @@ export default async function FinancialDNAPage({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
-            Financial DNA
+            <LanguageText id="financialDna.title" />
           </h1>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            Your unique financial personality and risk profile.
+            <LanguageText id="financialDna.subtitle" />
           </p>
+        </div>
+        <div className="w-full rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm shadow-sm sm:max-w-xs">
+          <p className="font-semibold text-emerald-950">Preferred language</p>
+          <PreferredLanguageSelect initialLanguage={appUser?.preferredLanguage} />
         </div>
       </div>
 

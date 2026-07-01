@@ -412,7 +412,7 @@ function getSummary(answers: DNAAnswers) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { message, reset, userId } = body;
+    const { message, preferredLanguage, reset, userId } = body;
     await connectToDatabase();
 
     if (!userId || typeof userId !== "string") {
@@ -445,6 +445,11 @@ export async function POST(req: Request) {
         { error: "User profile not found. Please refresh and try again." },
         { status: 404 }
       );
+    }
+
+    if (typeof preferredLanguage === "string" && preferredLanguage.trim()) {
+      appUser.preferredLanguage = preferredLanguage.trim();
+      await appUser.save();
     }
 
     const appUserId = appUser._id;

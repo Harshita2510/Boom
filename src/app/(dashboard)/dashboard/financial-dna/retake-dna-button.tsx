@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { ChevronRight, RotateCcw } from "lucide-react";
 
+import { LanguageText } from "@/components/language-text";
+
 export function RetakeDNAButton({ userId }: { userId?: string }) {
   const router = useRouter();
 
@@ -28,10 +30,10 @@ export function RetakeDNAButton({ userId }: { userId?: string }) {
           </span>
           <span className="min-w-0">
             <span className="block text-base font-bold text-white sm:text-lg">
-              Update Financial DNA
+              <LanguageText id="financialDna.updateTitle" />
             </span>
             <span className="block text-sm font-semibold leading-5 text-emerald-100 sm:text-base">
-              Change only what is different now.
+              <LanguageText id="financialDna.updateSubtitle" />
             </span>
           </span>
         </span>

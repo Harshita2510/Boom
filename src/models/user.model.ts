@@ -43,6 +43,10 @@ const userSchema = new Schema(
       type: String,
       default: "en-IN"
     },
+    preferredLanguage: {
+      type: String,
+      trim: true
+    },
     lastActiveAt: Date
   },
   {

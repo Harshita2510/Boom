@@ -15,7 +15,6 @@ import {
   Landmark,
   LayoutDashboard,
   LibraryBig,
-  Menu,
   Mic,
   Radar,
   Repeat2,
@@ -23,90 +22,101 @@ import {
   Loader2,
   TrendingUp,
   UserRound,
-  UsersRound
+  UsersRound,
+  type LucideIcon
 } from "lucide-react";
 
-const primaryNavItems = [
+import { type AppLanguage, type TranslationKey, translate } from "@/lib/i18n";
+
+const primaryNavItems: Array<{
+  titleKey: TranslationKey;
+  href: string;
+  icon: LucideIcon;
+}> = [
   {
-    title: "Dashboard",
+    titleKey: "nav.dashboard",
     href: "/dashboard",
     icon: LayoutDashboard
   },
   {
-    title: "Financial DNA",
+    titleKey: "nav.financialDna",
     href: "/dashboard/financial-dna",
     icon: Brain
   },
   {
-    title: "Learn",
+    titleKey: "nav.learn",
     href: "/dashboard/learn",
     icon: LibraryBig
   },
   {
-    title: "Voice Ledger",
+    titleKey: "nav.voiceLedger",
     href: "/dashboard/voice-ledger",
     icon: AudioLines
   },
   {
-    title: "Voice Mode",
+    titleKey: "nav.voiceMode",
     href: "/dashboard/voice-mode",
     icon: Mic
   },
   {
-    title: "Community",
+    titleKey: "nav.community",
     href: "/dashboard/community-intelligence",
     icon: UsersRound
   },
   {
-    title: "Scam Shield",
+    titleKey: "nav.scamShield",
     href: "/dashboard/scam-shield",
     icon: ShieldCheck
   },
   {
-    title: "Documents",
+    titleKey: "nav.documents",
     href: "/dashboard/documents",
     icon: FileSearch
   },
   {
-    title: "Profile",
+    titleKey: "nav.profile",
     href: "/dashboard/profile",
     icon: UserRound
   }
 ];
 
-const featureNavItems = [
+const featureNavItems: Array<{
+  titleKey: TranslationKey;
+  href: string;
+  icon: LucideIcon;
+}> = [
   {
-    title: "Schemes",
+    titleKey: "nav.schemes",
     href: "/dashboard/schemes",
     icon: Landmark
   },
   {
-    title: "Budget Coach",
+    titleKey: "nav.budgetCoach",
     href: "/dashboard/budget-coach",
     icon: ChartNoAxesCombined
   },
   {
-    title: "Goals",
+    titleKey: "nav.goals",
     href: "/dashboard/goals",
     icon: Goal
   },
   {
-    title: "Cash Smoothing",
+    titleKey: "nav.cashSmoothing",
     href: "/dashboard/cash-smoothing",
     icon: CloudSun
   },
   {
-    title: "Recurring",
+    titleKey: "nav.recurring",
     href: "/dashboard/recurring",
     icon: Repeat2
   },
   {
-    title: "Investments",
+    titleKey: "nav.investments",
     href: "/dashboard/investments",
     icon: TrendingUp
   },
   {
-    title: "Simulation",
+    titleKey: "nav.simulation",
     href: "/dashboard/future-simulation",
     icon: Radar
   }
@@ -118,8 +128,8 @@ export function DashboardNav({
   hasFinancialDNA: boolean;
 }) {
   const pathname = usePathname();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [featuresOpen, setFeaturesOpen] = useState(false);
+  const [language, setLanguage] = useState<AppLanguage>("en");
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   const visiblePrimaryNavItems = hasFinancialDNA
     ? primaryNavItems
@@ -128,14 +138,36 @@ export function DashboardNav({
 
   useEffect(() => {
     setPendingHref(null);
-    setMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    const storedLanguage = window.localStorage.getItem("arthsathi-language");
+
+    if (storedLanguage === "hi" || storedLanguage === "en") {
+      setLanguage(storedLanguage);
+    }
+
+    function handleLanguageChange(event: Event) {
+      const customEvent = event as CustomEvent<{ language?: AppLanguage }>;
+      const nextLanguage = customEvent.detail?.language;
+
+      if (nextLanguage === "hi" || nextLanguage === "en") {
+        setLanguage(nextLanguage);
+      }
+    }
+
+    window.addEventListener("arthsathi-language-change", handleLanguageChange);
+
+    return () => {
+      window.removeEventListener("arthsathi-language-change", handleLanguageChange);
+    };
+  }, []);
 
   function getLinkClass(href: string, compact = false) {
     const active = pathname === href;
     const pending = pendingHref === href;
 
-    return `inline-flex ${compact ? "h-9" : "h-10"} items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors ${
+    return `inline-flex ${compact ? "h-9" : "h-9"} items-center gap-2 rounded-md px-3 text-sm font-semibold transition-colors ${
       active
         ? "bg-emerald-50 text-emerald-900"
         : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -149,87 +181,7 @@ export function DashboardNav({
   }
 
   return (
-    <>
-      <nav className="md:hidden">
-        <div className={hasFinancialDNA ? "grid grid-cols-2 gap-2" : "grid gap-2"}>
-          <button
-            type="button"
-            onClick={() => setMenuOpen((value) => !value)}
-            aria-expanded={menuOpen}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border bg-background px-3 text-sm font-semibold text-muted-foreground"
-          >
-            <Menu className="size-4" aria-hidden="true" />
-            Menu
-          </button>
-          {hasFinancialDNA ? (
-            <button
-              type="button"
-              onClick={() => setFeaturesOpen((value) => !value)}
-              aria-expanded={featuresOpen}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-md border bg-background px-3 text-sm font-semibold text-muted-foreground"
-            >
-              {featuresOpen ? (
-                <ChevronDown className="size-4" aria-hidden="true" />
-              ) : (
-                <ChevronRight className="size-4" aria-hidden="true" />
-              )}
-              Features
-            </button>
-          ) : null}
-        </div>
-
-        {menuOpen ? (
-          <div className="mt-2 grid gap-2 sm:grid-cols-2">
-            {visiblePrimaryNavItems.map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  prefetch
-                  onClick={() => markPending(item.href)}
-                  className={getLinkClass(item.href)}
-                >
-                  {pendingHref === item.href ? (
-                    <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                  ) : (
-                    <Icon className="size-4" aria-hidden="true" />
-                  )}
-                  {item.title}
-                </Link>
-              );
-            })}
-          </div>
-        ) : null}
-
-        {featuresOpen ? (
-          <div className="mt-2 grid gap-2 sm:grid-cols-2">
-            {visibleFeatureNavItems.map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  prefetch
-                  onClick={() => markPending(item.href)}
-                  className={getLinkClass(item.href)}
-                >
-                  {pendingHref === item.href ? (
-                    <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                  ) : (
-                    <Icon className="size-4" aria-hidden="true" />
-                  )}
-                  {item.title}
-                </Link>
-              );
-            })}
-          </div>
-        ) : null}
-      </nav>
-
-      <nav className="hidden gap-1 md:flex md:flex-col">
+      <nav className="flex flex-col gap-0.5">
         {visiblePrimaryNavItems.map((item) => {
           const Icon = item.icon;
 
@@ -246,7 +198,7 @@ export function DashboardNav({
               ) : (
                 <Icon className="size-4" aria-hidden="true" />
               )}
-              {item.title}
+              {translate(item.titleKey, language)}
             </Link>
           );
         })}
@@ -256,19 +208,19 @@ export function DashboardNav({
             type="button"
             onClick={() => setFeaturesOpen((value) => !value)}
             aria-expanded={featuresOpen}
-            className="inline-flex h-10 w-full items-center gap-2 rounded-md px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            className="inline-flex h-9 w-full items-center gap-2 rounded-md px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
           >
             {featuresOpen ? (
               <ChevronDown className="size-4" aria-hidden="true" />
             ) : (
               <ChevronRight className="size-4" aria-hidden="true" />
             )}
-            Features
+            {translate("nav.features", language)}
           </button>
         ) : null}
 
         {featuresOpen ? (
-          <div className="mt-1 flex flex-col gap-1 border-l pl-2">
+          <div className="mt-1 flex flex-col gap-0.5 border-l pl-2">
             {visibleFeatureNavItems.map((item) => {
               const Icon = item.icon;
 
@@ -285,13 +237,12 @@ export function DashboardNav({
                   ) : (
                     <Icon className="size-4" aria-hidden="true" />
                   )}
-                  {item.title}
+                  {translate(item.titleKey, language)}
                 </Link>
               );
             })}
           </div>
         ) : null}
       </nav>
-    </>
   );
 }

@@ -153,6 +153,8 @@ const copy = {
     moodPlaceholder: "What should I call you?",
     reading: "Reading your answer",
     updateDNA: "Update DNA",
+    updatePrompt:
+      "Tell me only what changed in your Financial DNA. For example: income is 80k, city is Pune, goals are home and retirement, risk is moderate.",
     useChipsPlaceholder: "Use the chips above, or update your DNA",
     voiceUnsupported:
       "Voice input is not supported in this browser. You can type your answer here.",
@@ -185,6 +187,8 @@ const copy = {
     moodPlaceholder: "आज आप कैसा महसूस कर रहे हैं?",
     reading: "आपका जवाब पढ़ रहा हूं",
     updateDNA: "DNA अपडेट करें",
+    updatePrompt:
+      "सिर्फ वह बताएं जो आपके Financial DNA में बदला है. जैसे: income 80k है, city Pune है, goals home और retirement हैं, risk moderate है.",
     useChipsPlaceholder: "ऊपर chips चुनें, या DNA update करें",
     voiceUnsupported:
       "इस browser में voice input supported नहीं है. आप यहां type कर सकते हैं.",
@@ -217,6 +221,7 @@ const copy = {
     moodPlaceholder: string;
     reading: string;
     updateDNA: string;
+    updatePrompt: string;
     useChipsPlaceholder: string;
     voiceUnsupported: string;
     welcomeMessage: string;
@@ -283,17 +288,20 @@ export function OnboardingChat({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const isUpdateMode = searchParams.get("update") === "1";
   const [language, setLanguage] = useState<Language>("en");
   const [messages, setMessages] = useState<Msg[]>([
     {
       role: "agent",
-      text: initialSummary ? copy.en.completedMessage : copy.en.welcomeMessage
+      text: initialSummary && !isUpdateMode
+        ? copy.en.completedMessage
+        : copy.en.welcomeMessage
     }
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [completed, setCompleted] = useState(Boolean(initialSummary));
+  const [completed, setCompleted] = useState(Boolean(initialSummary) && !isUpdateMode);
   const [showCityInput, setShowCityInput] = useState(false);
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -310,27 +318,56 @@ export function OnboardingChat({
     return language === "hi" ? reply.labelHi : reply.label;
   }
 
+  function getLocalizedAgentText(
+    targetLanguage: Language,
+    meta?: Msg["meta"]
+  ) {
+    const targetCopy = copy[targetLanguage];
+
+    if (completed || meta?.completed) {
+      return targetCopy.completedMessage;
+    }
+
+    if (meta?.step === 11) {
+      return targetCopy.updatePrompt;
+    }
+
+    if (typeof meta?.step === "number") {
+      return targetCopy.stepPrompts[meta.step] ?? targetCopy.welcomeMessage;
+    }
+
+    return targetCopy.welcomeMessage;
+  }
+
   function switchLanguage(nextLanguage: Language) {
     if (nextLanguage === language) {
       return;
     }
 
-    const nextCopy = copy[nextLanguage];
     setLanguage(nextLanguage);
 
     setMessages((current) => {
-      if (current.length !== 1 || current[0]?.role !== "agent") {
+      let lastAgentIndex = -1;
+
+      for (let index = current.length - 1; index >= 0; index -= 1) {
+        if (current[index]?.role === "agent") {
+          lastAgentIndex = index;
+          break;
+        }
+      }
+
+      if (lastAgentIndex === -1) {
         return current;
       }
 
-      return [
-        {
-          role: "agent",
-          text: completed
-            ? nextCopy.completedMessage
-            : nextCopy.welcomeMessage
-        }
-      ];
+      return current.map((message, index) =>
+        index === lastAgentIndex
+          ? {
+              ...message,
+              text: getLocalizedAgentText(nextLanguage, message.meta)
+            }
+          : message
+      );
     });
   }
 
@@ -340,6 +377,32 @@ export function OnboardingChat({
       top: scrollRef.current.scrollHeight
     });
   }, [messages, loading]);
+
+  useEffect(() => {
+    const storedLanguage = window.localStorage.getItem("arthsathi-language");
+
+    if (storedLanguage === "hi" || storedLanguage === "en") {
+      switchLanguage(storedLanguage);
+    }
+
+    function handleLanguageChange(event: Event) {
+      const customEvent = event as CustomEvent<{ language?: Language }>;
+      const nextLanguage = customEvent.detail?.language;
+
+      if (nextLanguage === "hi" || nextLanguage === "en") {
+        switchLanguage(nextLanguage);
+      }
+    }
+
+    window.addEventListener("arthsathi-language-change", handleLanguageChange);
+
+    return () => {
+      window.removeEventListener(
+        "arthsathi-language-change",
+        handleLanguageChange
+      );
+    };
+  }, [completed, isUpdateMode, language]);
 
   useEffect(() => {
     return () => {
@@ -352,7 +415,7 @@ export function OnboardingChat({
 
   useEffect(() => {
     if (
-      searchParams.get("update") === "1" &&
+      isUpdateMode &&
       completed &&
       !loading &&
       !updateStartedRef.current
@@ -360,7 +423,7 @@ export function OnboardingChat({
       updateStartedRef.current = true;
       void startUpdate();
     }
-  }, [completed, loading, searchParams]);
+  }, [completed, isUpdateMode, loading]);
 
   async function send(rawMessage = input, displayMessage?: string) {
     const msg = rawMessage.trim();
@@ -399,14 +462,13 @@ export function OnboardingChat({
         {
           meta: data,
           role: "agent",
-          text: data.completed
-            ? text.completedMessage
-            : data.reply
+          text: getLocalizedAgentText(language, data)
         }
       ]);
 
       if (data.completed) {
         redirectTimerRef.current = setTimeout(() => {
+          router.refresh();
           router.replace("/dashboard");
         }, 1200);
       }
@@ -431,6 +493,7 @@ export function OnboardingChat({
       return;
     }
 
+    updateStartedRef.current = true;
     setLoading(true);
 
     try {
@@ -453,7 +516,7 @@ export function OnboardingChat({
         {
           meta: data,
           role: "agent",
-          text: data.reply ?? text.welcomeMessage
+          text: data.step === 11 ? text.updatePrompt : data.reply ?? text.welcomeMessage
         }
       ]);
     } catch (error) {
@@ -549,7 +612,7 @@ export function OnboardingChat({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-          <div className="hidden rounded-full border border-[#dfe4dc] bg-[#fffdfa] p-1 sm:flex">
+          <div className="flex rounded-full border border-[#dfe4dc] bg-[#fffdfa] p-1">
             {(["en", "hi"] as Language[]).map((item) => (
               <button
                 key={item}
@@ -634,24 +697,6 @@ export function OnboardingChat({
           </div>
 
           <div className="border-t border-[#e7e2d7] bg-white p-3 sm:p-5">
-            <div className="mb-4 flex rounded-full border border-[#dfe4dc] bg-[#fffdfa] p-1 sm:hidden">
-              {(["en", "hi"] as Language[]).map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  onClick={() => switchLanguage(item)}
-                  className={`h-9 flex-1 rounded-full text-sm font-bold transition ${
-                    language === item
-                      ? "bg-[#216f61] text-white shadow-sm"
-                      : "text-[#6d746c]"
-                  }`}
-                  aria-pressed={language === item}
-                >
-                  {item === "en" ? "English" : "हिंदी"}
-                </button>
-              ))}
-            </div>
-
             {quickReplies.length > 0 ? (
               <div className="mb-4 flex flex-wrap gap-2 sm:gap-3">
                 {quickReplies.map((reply) => {

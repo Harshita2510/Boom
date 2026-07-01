@@ -1,26 +1,29 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  BadgeCheck,
   Check,
   FileSearch,
   Goal,
   Mic,
   Radar,
   ShieldCheck,
-  Sparkles,
   Target,
-  WandSparkles
+  WandSparkles,
+  type LucideIcon
 } from "lucide-react";
 
+import { LanguageText } from "@/components/language-text";
+import type { TranslationKey } from "@/lib/i18n";
 import { requireFinancialDNA } from "@/lib/financial-dna-gate";
 import { connectToDatabase } from "@/lib/mongoose";
 import {
   FinancialDNAModel,
   GoalModel,
   TransactionModel,
-  UploadedDocumentModel
+  UploadedDocumentModel,
+  UserModel
 } from "@/models";
+import { DashboardGreeting } from "./dashboard-greeting";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +39,11 @@ type GoalSnapshot = {
   title?: string;
 };
 
+type UserGreeting = {
+  firstName?: string | null;
+  preferredLanguage?: string | null;
+};
+
 const rupee = new Intl.NumberFormat("en-IN", {
   currency: "INR",
   maximumFractionDigits: 0,
@@ -44,70 +52,83 @@ const rupee = new Intl.NumberFormat("en-IN", {
 
 const firstTimeActions = [
   {
-    caption: "I spent ₹500 on groceries",
+    captionKey: "dashboard.logExpenseCaption",
     href: "/dashboard/voice-ledger",
     icon: Mic,
-    title: "Log an Expense"
+    titleKey: "dashboard.logExpense"
   },
   {
-    caption: "Upload a loan, insurance, or bank document",
+    captionKey: "dashboard.understandDocumentCaption",
     href: "/dashboard/documents",
     icon: FileSearch,
-    title: "Understand a Document"
+    titleKey: "dashboard.understandDocument"
   },
   {
-    caption: "Explore how today's decisions affect tomorrow",
+    captionKey: "dashboard.seeFutureCaption",
     href: "/dashboard/future-simulation",
     icon: Radar,
-    title: "See Your Future"
+    titleKey: "dashboard.seeFuture"
   },
   {
-    caption: "Save for something important",
+    captionKey: "dashboard.createGoalCaption",
     href: "/dashboard/goals",
     icon: Goal,
-    title: "Create a Goal"
+    titleKey: "dashboard.createGoal"
   }
-];
+] satisfies Array<{
+  captionKey: TranslationKey;
+  href: string;
+  icon: LucideIcon;
+  titleKey: TranslationKey;
+}>;
 
 const returningActions = [
   {
     href: "/dashboard/voice-ledger",
     icon: Mic,
-    title: "Log Expense"
+    titleKey: "dashboard.logExpense"
   },
   {
     href: "/dashboard/documents",
     icon: FileSearch,
-    title: "Understand Document"
+    titleKey: "dashboard.understandDocument"
   },
   {
     href: "/dashboard/future-simulation",
     icon: Radar,
-    title: "Future Simulation"
+    titleKey: "dashboard.futureSimulation"
   },
   {
     href: "/dashboard/scam-shield",
     icon: ShieldCheck,
-    title: "Scam Check"
+    titleKey: "dashboard.scamCheck"
   }
-];
+] satisfies Array<{
+  href: string;
+  icon: LucideIcon;
+  titleKey: TranslationKey;
+}>;
 
 function getRiskStyle(riskAppetite?: string) {
   if (riskAppetite === "high") {
-    return "Growth";
+    return "dashboard.growth";
   }
 
   if (riskAppetite === "low") {
-    return "Conservative";
+    return "dashboard.conservative";
   }
 
-  return "Moderate";
+  return "dashboard.moderate";
 }
 
 function getPrimaryGoal(profile: FinancialDNASnapshot | null) {
   const goal = profile?.financialGoals?.find((item) => item.trim().length > 0);
 
-  return goal || "Emergency Fund";
+  return goal || "dashboard.emergencyFund";
+}
+
+function getDisplayName(user: UserGreeting) {
+  return user.firstName?.trim() || "there";
 }
 
 function getChecklistProgress(input: {
@@ -126,35 +147,35 @@ function getChecklistProgress(input: {
 }
 
 function ActionCard({
-  caption,
+  captionKey,
   href,
   icon: Icon,
-  title
+  titleKey
 }: {
-  caption?: string;
+  captionKey?: TranslationKey;
   href: string;
-  icon: typeof Mic;
-  title: string;
+  icon: LucideIcon;
+  titleKey: TranslationKey;
 }) {
   return (
     <Link
       href={href}
-      className="group flex min-h-[132px] flex-col justify-between rounded-[22px] border border-white/70 bg-white/80 p-4 shadow-sm shadow-slate-200/70 backdrop-blur transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 sm:min-h-[148px] sm:rounded-[24px] sm:p-5"
+      className="group flex min-h-[118px] flex-col justify-between rounded-2xl border border-slate-100 bg-white/90 p-4 shadow-sm shadow-slate-200/70 backdrop-blur transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
     >
       <span className="inline-flex size-12 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-sm">
         <Icon className="size-5" aria-hidden="true" />
       </span>
       <span>
         <span className="flex items-center justify-between gap-3 text-sm font-semibold text-slate-950 sm:text-base">
-          {title}
+          <LanguageText id={titleKey} />
           <ArrowRight
             className="size-4 shrink-0 text-slate-400 transition group-hover:translate-x-1 group-hover:text-indigo-600"
             aria-hidden="true"
           />
         </span>
-        {caption ? (
+        {captionKey ? (
           <span className="mt-2 block text-sm leading-5 text-slate-600">
-            {caption}
+            <LanguageText id={captionKey} />
           </span>
         ) : null}
       </span>
@@ -162,110 +183,92 @@ function ActionCard({
   );
 }
 
-function BoomMark() {
-  return (
-    <div className="relative grid size-14 place-items-center rounded-[22px] bg-slate-950 text-white shadow-xl shadow-indigo-200 sm:size-16 sm:rounded-[24px]">
-      <span className="absolute -right-1 -top-1 grid size-6 place-items-center rounded-full bg-emerald-400 text-slate-950">
-        <Sparkles className="size-3.5" aria-hidden="true" />
-      </span>
-      <Mic className="size-6 sm:size-7" aria-hidden="true" />
-    </div>
-  );
-}
-
 function FirstTimeDashboard({
-  profile
+  profile,
+  user
 }: {
   profile: FinancialDNASnapshot | null;
+  user: UserGreeting;
 }) {
   const primaryGoal = getPrimaryGoal(profile);
   const income = profile?.monthlyIncome || 50000;
   const riskStyle = getRiskStyle(profile?.riskAppetite);
+  const displayName = getDisplayName(user);
 
   return (
-    <main className="space-y-5 sm:space-y-6">
-      <section className="overflow-hidden rounded-[24px] border border-white/70 bg-[linear-gradient(135deg,#fff7ed_0%,#eef2ff_48%,#ecfeff_100%)] p-4 shadow-sm sm:rounded-[32px] sm:p-7">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+    <main className="space-y-5">
+      <section className="overflow-hidden rounded-2xl border border-slate-100 bg-[linear-gradient(135deg,#fff7ed_0%,#eef2ff_48%,#ecfeff_100%)] p-4 shadow-sm sm:p-5">
+        <div className="flex flex-col gap-5">
           <div className="max-w-2xl">
-            <div className="mb-5">
-              <BoomMark />
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-              🎉 Welcome to Boom
-            </h1>
-            <p className="mt-3 text-base leading-7 text-slate-700 sm:text-lg">
-              Your Financial DNA is ready. We've personalized Boom for you.
-            </p>
-          </div>
-          <div className="rounded-[28px] border border-white/70 bg-white/55 p-4 text-sm text-slate-700 shadow-sm backdrop-blur">
-            <div className="flex items-center gap-2 font-semibold text-slate-950">
-              <BadgeCheck className="size-5 text-emerald-600" aria-hidden="true" />
-              DNA complete
-            </div>
-            <p className="mt-2 max-w-[260px] leading-6">
-              Boom now has enough context to guide your first money moves.
-            </p>
+            <DashboardGreeting
+              displayName={displayName}
+              initialLanguage={user.preferredLanguage}
+            />
           </div>
         </div>
       </section>
 
-      <section className="space-y-3">
+      <section className="space-y-2">
         <h2 className="text-xl font-semibold tracking-tight text-slate-950">
-          Your Snapshot
+          <LanguageText id="dashboard.snapshot" />
         </h2>
-        <div className="rounded-[24px] border border-white/70 bg-slate-950 p-4 text-white shadow-xl shadow-slate-200 sm:rounded-[28px] sm:p-6">
+        <div className="rounded-2xl border border-white/70 bg-slate-950 p-4 text-white shadow-xl shadow-slate-200 lg:p-5">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              ["Goal", primaryGoal],
-              ["Income", `${rupee.format(income)}/month`],
-              ["Risk Style", riskStyle],
-              ["Focus", "Save More"]
+              ["dashboard.goal", primaryGoal],
+              ["dashboard.income", `${rupee.format(income)}/month`],
+              ["dashboard.riskStyle", riskStyle],
+              ["dashboard.focus", "dashboard.saveMore"]
             ].map(([label, value]) => (
               <div
                 key={label}
-                className="rounded-[20px] border border-white/10 bg-white/10 p-3 backdrop-blur sm:rounded-[22px] sm:p-4"
+                className="rounded-xl border border-white/10 bg-white/10 p-3 backdrop-blur lg:p-4"
               >
                 <p className="text-xs font-medium uppercase text-white/60">
-                  {label}
+                  <LanguageText id={label as TranslationKey} />
                 </p>
-                <p className="mt-2 text-lg font-semibold">{value}</p>
+                <p className="mt-2 text-lg font-semibold">
+                  {String(value).startsWith("dashboard.") ? (
+                    <LanguageText id={value as TranslationKey} />
+                  ) : (
+                    value
+                  )}
+                </p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="space-y-3">
+      <section className="space-y-2">
         <h2 className="text-xl font-semibold tracking-tight text-slate-950">
-          What would you like to do first?
+          <LanguageText id="dashboard.firstAction" />
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {firstTimeActions.map((action) => (
             <ActionCard key={action.href} {...action} />
           ))}
         </div>
       </section>
 
-      <section className="rounded-[24px] border border-indigo-100 bg-white/85 p-4 shadow-sm backdrop-blur sm:rounded-[28px] sm:p-6">
+      <section className="rounded-2xl border border-indigo-100 bg-white/90 p-4 shadow-sm backdrop-blur lg:p-5">
         <div className="flex flex-col gap-3 min-[420px]:flex-row min-[420px]:gap-4">
           <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-indigo-600 text-white">
             <WandSparkles className="size-5" aria-hidden="true" />
           </div>
           <div>
             <h2 className="text-lg font-semibold tracking-tight text-slate-950">
-              Boom's First Suggestion
+              <LanguageText id="dashboard.firstSuggestion" />
             </h2>
             <p className="mt-2 text-base leading-7 text-slate-700">
-              Based on your profile, building an emergency fund should be your
-              first financial milestone.
+              <LanguageText id="dashboard.suggestionText" />
             </p>
           </div>
         </div>
       </section>
 
       <p className="rounded-[24px] bg-emerald-50 px-5 py-4 text-center text-sm leading-6 text-emerald-950">
-        The more you interact with Boom, the smarter and more personalized your
-        financial guidance becomes.
+        <LanguageText id="dashboard.learnsFromYou" />
       </p>
     </main>
   );
@@ -276,15 +279,18 @@ function ReturningDashboard({
   expenseCount,
   firstGoal,
   goalsCount,
-  simulationsCount
+  simulationsCount,
+  user
 }: {
   documentsCount: number;
   expenseCount: number;
   firstGoal: GoalSnapshot | null;
   goalsCount: number;
   simulationsCount: number;
+  user: UserGreeting;
 }) {
-  const goalTitle = firstGoal?.title || "Emergency Fund";
+  const goalTitle = firstGoal?.title;
+  const displayName = getDisplayName(user);
   const currentAmount = firstGoal?.currentAmount ?? 5000;
   const targetAmount = firstGoal?.targetAmount ?? 50000;
   const goalProgress =
@@ -299,17 +305,14 @@ function ReturningDashboard({
 
   return (
     <main className="space-y-5 sm:space-y-6">
-      <section className="rounded-[24px] border border-white/70 bg-[linear-gradient(135deg,#f8fafc_0%,#ecfeff_52%,#fff7ed_100%)] p-4 shadow-sm sm:rounded-[32px] sm:p-7">
+      <section className="rounded-2xl border border-white/70 bg-[linear-gradient(135deg,#f8fafc_0%,#ecfeff_52%,#fff7ed_100%)] p-4 shadow-sm sm:p-5">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-              👋 Welcome Back
-            </h1>
-            <p className="mt-3 text-base leading-7 text-slate-700 sm:text-lg">
-              Ready to continue your financial journey?
-            </p>
+            <DashboardGreeting
+              displayName={displayName}
+              initialLanguage={user.preferredLanguage}
+            />
           </div>
-          <BoomMark />
         </div>
       </section>
 
@@ -319,9 +322,16 @@ function ReturningDashboard({
             <Target className="size-5" aria-hidden="true" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-slate-500">Goal Progress</p>
+            <p className="text-sm font-medium text-slate-500">
+              <LanguageText id="dashboard.goalProgress" />
+            </p>
             <h2 className="mt-1 text-lg font-semibold tracking-tight text-slate-950 sm:text-xl">
-              🎯 {goalTitle}
+              🎯{" "}
+              {goalTitle ? (
+                goalTitle
+              ) : (
+                <LanguageText id="dashboard.emergencyFund" />
+              )}
             </h2>
             <p className="mt-3 text-lg font-semibold text-slate-950">
               {rupee.format(currentAmount)} / {rupee.format(targetAmount)}
@@ -338,7 +348,7 @@ function ReturningDashboard({
 
       <section className="space-y-3">
         <h2 className="text-xl font-semibold tracking-tight text-slate-950">
-          Quick Actions
+          <LanguageText id="dashboard.quickActions" />
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {returningActions.map((action) => (
@@ -350,20 +360,20 @@ function ReturningDashboard({
       <section className="grid gap-4 lg:grid-cols-[1fr_1fr]">
         <div className="rounded-[24px] border border-white/70 bg-white/85 p-4 shadow-sm backdrop-blur sm:rounded-[28px] sm:p-6">
           <h2 className="text-lg font-semibold tracking-tight text-slate-950">
-            Your Activity
+            <LanguageText id="dashboard.yourActivity" />
           </h2>
           <div className="mt-4 grid gap-3">
             {[
-              ["Expenses Logged", expenseCount],
-              ["Goals Created", goalsCount],
-              ["Documents Analyzed", documentsCount]
+              ["dashboard.expensesLogged", expenseCount],
+              ["dashboard.goalsCreated", goalsCount],
+              ["dashboard.documentsAnalyzed", documentsCount]
             ].map(([label, value]) => (
               <div
                 key={label}
                 className="flex items-center justify-between rounded-[20px] bg-slate-50 px-4 py-3"
               >
                 <span className="text-sm font-medium text-slate-600">
-                  {label}
+                  <LanguageText id={label as TranslationKey} />
                 </span>
                 <span className="text-lg font-semibold text-slate-950">
                   {value}
@@ -380,11 +390,10 @@ function ReturningDashboard({
             </div>
             <div>
               <h2 className="text-lg font-semibold tracking-tight text-slate-950">
-                AI Insight
+                <LanguageText id="dashboard.aiInsight" />
               </h2>
               <p className="mt-2 text-base leading-7 text-slate-700">
-                You are consistently tracking expenses. Keep logging for a few
-                more days to unlock personalized spending insights.
+                <LanguageText id="dashboard.aiInsightText" />
               </p>
             </div>
           </div>
@@ -395,10 +404,10 @@ function ReturningDashboard({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-medium text-white/60">
-              Suggested Next Step
+              <LanguageText id="dashboard.suggestedNextStep" />
             </p>
             <h2 className="mt-1 text-xl font-semibold tracking-tight sm:text-2xl">
-              Complete Your First Week
+              <LanguageText id="dashboard.completeFirstWeek" />
             </h2>
           </div>
           <div className="rounded-2xl bg-white/10 px-4 py-3 text-xl font-semibold">
@@ -413,9 +422,9 @@ function ReturningDashboard({
         </div>
         <div className="mt-5 grid gap-3">
           {[
-            { complete: expenseCount > 0, label: "Log your first expenses" },
-            { complete: simulationsCount > 0, label: "Run a future simulation" },
-            { complete: documentsCount > 0, label: "Upload a financial document" }
+            { complete: expenseCount > 0, label: "dashboard.logFirstExpenses" },
+            { complete: simulationsCount > 0, label: "dashboard.runFutureSimulation" },
+            { complete: documentsCount > 0, label: "dashboard.uploadFinancialDocument" }
           ].map(({ complete, label }) => (
             <div key={label} className="flex items-center gap-3">
               <span
@@ -425,7 +434,9 @@ function ReturningDashboard({
               >
                 {complete ? <Check className="size-4" aria-hidden="true" /> : null}
               </span>
-              <span className="text-sm font-medium text-white/85">{label}</span>
+              <span className="text-sm font-medium text-white/85">
+                <LanguageText id={label as TranslationKey} />
+              </span>
             </div>
           ))}
         </div>
@@ -444,7 +455,8 @@ export default async function DashboardPage() {
     goalsCount,
     documentsCount,
     simulationsCount,
-    firstGoal
+    firstGoal,
+    freshUser
   ] = await Promise.all([
     FinancialDNAModel.findOne({ userId: appUser._id }).lean<FinancialDNASnapshot | null>(),
     TransactionModel.countDocuments({ type: "expense", userId: appUser._id }),
@@ -453,7 +465,8 @@ export default async function DashboardPage() {
     0,
     GoalModel.findOne({ status: "active", userId: appUser._id })
       .sort({ createdAt: 1 })
-      .lean<GoalSnapshot | null>()
+      .lean<GoalSnapshot | null>(),
+    UserModel.findById(appUser._id).lean<UserGreeting | null>()
   ]);
 
   const hasActivity =
@@ -461,9 +474,13 @@ export default async function DashboardPage() {
     goalsCount > 0 ||
     documentsCount > 0 ||
     simulationsCount > 0;
+  const userGreeting = {
+    firstName: freshUser?.firstName ?? appUser.firstName,
+    preferredLanguage: freshUser?.preferredLanguage ?? appUser.preferredLanguage
+  };
 
   if (!hasActivity) {
-    return <FirstTimeDashboard profile={profile} />;
+    return <FirstTimeDashboard profile={profile} user={userGreeting} />;
   }
 
   return (
@@ -473,6 +490,7 @@ export default async function DashboardPage() {
       firstGoal={firstGoal}
       goalsCount={goalsCount}
       simulationsCount={simulationsCount}
+      user={userGreeting}
     />
   );
 }
