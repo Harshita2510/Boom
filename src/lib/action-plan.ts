@@ -273,7 +273,8 @@ async function buildAISummary(input: {
     }),
     temperature: 0.25,
     maxTokens: 320,
-    timeoutMs: 4500
+    timeoutMs: 4500,
+    task: "action_plan"
   });
 
   return result.ok ? result.text ?? null : null;

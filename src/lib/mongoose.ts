@@ -29,9 +29,14 @@ export async function connectToDatabase() {
     return cached.conn;
   }
 
-  cached.promise ??= mongoose.connect(mongoUri, {
-    dbName: process.env.MONGODB_DB
-  });
+  cached.promise ??= mongoose
+    .connect(mongoUri, {
+      dbName: process.env.MONGODB_DB
+    })
+    .catch((error) => {
+      cached.promise = null;
+      throw error;
+    });
 
   cached.conn = await cached.promise;
   return cached.conn;

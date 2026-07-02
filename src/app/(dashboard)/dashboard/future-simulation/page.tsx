@@ -29,6 +29,14 @@ type SimulationSnapshot = {
     note?: string;
     savingsAfterTwelveMonths?: number;
   };
+  scenarios?: {
+    emergencyFundMonths?: number;
+    key?: string;
+    label?: string;
+    note?: string;
+    priority?: "best" | "neutral" | "risk";
+    savingsAfterTwelveMonths?: number;
+  }[];
 };
 
 function formatRupees(value: number) {
@@ -54,9 +62,13 @@ export default async function FutureSimulationPage() {
     .lean<SimulationSnapshot | null>();
 
   const maxBar =
-    latestSimulation?.projectedTwelveMonthImpact &&
-    latestSimulation.projectedTwelveMonthImpact > 0
-      ? latestSimulation.projectedTwelveMonthImpact
+    latestSimulation &&
+    (Math.abs(latestSimulation.projectedSixMonthImpact) > 0 ||
+      Math.abs(latestSimulation.projectedTwelveMonthImpact) > 0)
+      ? Math.max(
+          Math.abs(latestSimulation.projectedSixMonthImpact),
+          Math.abs(latestSimulation.projectedTwelveMonthImpact)
+        )
       : 12000;
 
   return (
@@ -112,7 +124,32 @@ export default async function FutureSimulationPage() {
             />
           </div>
 
-          {latestSimulation.scenarioA && latestSimulation.scenarioB ? (
+          {latestSimulation.scenarios?.length ? (
+            <div className="rounded-lg border bg-muted/20 p-4">
+              <div className="flex items-center gap-2">
+                <GitCompareArrows
+                  className="size-5 text-emerald-700"
+                  aria-hidden="true"
+                />
+                <h3 className="font-semibold">Generated scenarios</h3>
+              </div>
+
+              <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {latestSimulation.scenarios.map((scenario) => (
+                  <ScenarioCard
+                    key={scenario.key ?? scenario.label}
+                    scenario={scenario}
+                  />
+                ))}
+              </div>
+
+              {latestSimulation.recommendation ? (
+                <p className="mt-4 rounded-md bg-slate-950 p-3 text-sm leading-6 text-white">
+                  {latestSimulation.recommendation}
+                </p>
+              ) : null}
+            </div>
+          ) : latestSimulation.scenarioA && latestSimulation.scenarioB ? (
             <div className="rounded-lg border bg-muted/20 p-4">
               <div className="flex items-center gap-2">
                 <GitCompareArrows
@@ -169,13 +206,21 @@ function ScenarioCard({
 }: {
   scenario: {
     emergencyFundMonths?: number;
+    priority?: "best" | "neutral" | "risk";
     label?: string;
     note?: string;
     savingsAfterTwelveMonths?: number;
   };
 }) {
+  const priorityClass =
+    scenario.priority === "best"
+      ? "border-emerald-200 bg-emerald-50/40"
+      : scenario.priority === "risk"
+        ? "border-rose-200 bg-rose-50/40"
+        : "bg-background";
+
   return (
-    <div className="rounded-md border bg-background p-4">
+    <div className={`rounded-md border p-4 ${priorityClass}`}>
       <p className="font-semibold">{scenario.label}</p>
       <p className="mt-3 text-2xl font-semibold">
         {formatRupees(scenario.savingsAfterTwelveMonths ?? 0)}
@@ -223,7 +268,10 @@ function ProjectionBar({
   max: number;
   value: number;
 }) {
-  const width = `${Math.min(100, Math.round((value / max) * 100))}%`;
+  const normalizedWidth = `${Math.min(
+    100,
+    Math.round((Math.abs(value) / max) * 100)
+  )}%`;
 
   return (
     <div>
@@ -232,7 +280,12 @@ function ProjectionBar({
         <span className="text-muted-foreground">{formatRupees(value)}</span>
       </div>
       <div className="h-3 rounded-full bg-muted">
-        <div className="h-3 rounded-full bg-emerald-500" style={{ width }} />
+        <div
+          className={`h-3 rounded-full ${
+            value < 0 ? "bg-rose-500" : "bg-emerald-500"
+          }`}
+          style={{ width: normalizedWidth }}
+        />
       </div>
     </div>
   );

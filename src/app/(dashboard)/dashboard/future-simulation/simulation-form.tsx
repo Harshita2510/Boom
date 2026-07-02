@@ -41,6 +41,37 @@ export function SimulationForm() {
         />
       </label>
 
+      <div className="mt-4 grid gap-4 md:grid-cols-3">
+        <label className="block space-y-2">
+          <span className="text-sm font-medium">On-road price</span>
+          <input
+            name="onRoadPrice"
+            inputMode="numeric"
+            placeholder="Optional"
+            className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+          />
+        </label>
+
+        <label className="block space-y-2">
+          <span className="text-sm font-medium">Monthly saving capacity</span>
+          <input
+            name="monthlySavingsAvailable"
+            inputMode="numeric"
+            placeholder="5000"
+            className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+          />
+        </label>
+
+        <label className="block space-y-2">
+          <span className="text-sm font-medium">Registration city</span>
+          <input
+            name="registrationCity"
+            placeholder="Mumbai"
+            className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+          />
+        </label>
+      </div>
+
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         <SubmitButton />
         {state.message ? (

@@ -162,7 +162,8 @@ export async function summarizeDocumentTextWithAI(
     prompt: `Document text:\n${relevantText || text.slice(0, 3500)}\n\nCreate a concise analysis with these headings exactly:\nSimple summary\nMoney impact\nRed flags\nWhat to do next`,
     temperature: 0.2,
     maxTokens: 520,
-    timeoutMs: 5000
+    timeoutMs: 5000,
+    task: "document"
   });
 
   return {
@@ -192,7 +193,8 @@ export async function answerDocumentQuestion(
       prompt: `Question: ${question}\n\nRelevant document excerpts:\n${sources.join("\n\n")}\n\nAnswer with these headings exactly:\nDirect answer\nWhy it matters\nRisks or hidden catches\nNext step\n\nRules:\n- Give at least 2 complete sentences under Direct answer.\n- If the question asks about credit score, explain exactly what event affects it, such as missed EMI, delayed payment, default, or settlement, only if supported by the excerpts.\n- End with a complete Next step sentence.`,
       temperature: 0.2,
       maxTokens: 850,
-      timeoutMs: 7000
+      timeoutMs: 7000,
+      task: "document"
     });
 
     if (result.ok && result.text && isCompleteDocumentAnswer(result.text)) {

@@ -27,28 +27,33 @@ if (enableInsecureTls) {
   console.warn("Warning: MongoDB TLS validation is disabled. This should only be used for local debugging.");
 }
 
-let client: MongoClient;
-let clientPromise: Promise<MongoClient>;
-
 const globalForMongo = globalThis as typeof globalThis & {
   _mongoClientPromise?: Promise<MongoClient>;
 };
 
-if (process.env.NODE_ENV === "development") {
-  if (!globalForMongo._mongoClientPromise) {
-    client = new MongoClient(uri, options);
-    globalForMongo._mongoClientPromise = client.connect();
+function createClientPromise() {
+  const client = new MongoClient(uri, options);
+
+  return client.connect().catch((error) => {
+    if (process.env.NODE_ENV === "development") {
+      globalForMongo._mongoClientPromise = undefined;
+    }
+
+    throw error;
+  });
+}
+
+function getClientPromise() {
+  if (process.env.NODE_ENV === "development") {
+    globalForMongo._mongoClientPromise ??= createClientPromise();
+    return globalForMongo._mongoClientPromise;
   }
 
-  clientPromise = globalForMongo._mongoClientPromise!;
-} else {
-  client = new MongoClient(uri, options);
-  clientPromise = client.connect();
+  return createClientPromise();
 }
 
 export async function getDatabase() {
+  const clientPromise = getClientPromise();
   const connectedClient = await clientPromise;
   return connectedClient.db(process.env.MONGODB_DB);
 }
-
-export default clientPromise;

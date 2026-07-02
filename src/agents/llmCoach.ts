@@ -27,6 +27,7 @@ export async function handleLLMCoach(
     prompt: buildPrompt(message, context),
     temperature: 0.35,
     maxTokens: 650,
+    task: "coach"
   });
 
   if (!result.ok || !result.text) {
