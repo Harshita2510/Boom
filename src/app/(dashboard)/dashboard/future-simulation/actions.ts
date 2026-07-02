@@ -27,6 +27,8 @@ type FinancialDNASnapshot = {
   riskAppetite?: "low" | "medium" | "high";
 };
 
+type DataConfidence = "high" | "low" | "medium";
+
 type TransactionSnapshot = {
   amount: number;
   category?: string;
@@ -219,7 +221,7 @@ function formatRupees(value: number) {
   }).format(value);
 }
 
-function calculateMonthlyExpenseEstimate(transactions: TransactionSnapshot[]) {
+function calculateMonthlyExpenseEstimate(transactions: TransactionSnapshot[]): { confidence: DataConfidence; estimate: number } {
   const expenses = transactions.filter(
     (transaction) => transaction.type === "expense"
   );

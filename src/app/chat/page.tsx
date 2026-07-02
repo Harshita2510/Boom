@@ -8,10 +8,13 @@ import {
   Brain,
   ChartNoAxesCombined,
   Loader2,
+  MessageSquare,
   Mic,
+  Plus,
   Send,
   ShieldCheck,
-  Sparkles
+  Sparkles,
+  Trash2
 } from "lucide-react";
 
 type Message = {
@@ -21,6 +24,25 @@ type Message = {
   role: "user" | "agent";
   text: string;
   timestamp?: string;
+};
+
+type Conversation = {
+  createdAt?: string;
+  id: string;
+  messages: Message[];
+  title: string;
+  updatedAt?: string;
+};
+
+const activeChatStorageKey = "arthsaathi.activeChatId";
+
+const welcomeMessage: Message = {
+  agent: "orchestrator",
+  intent: "welcome",
+  role: "agent",
+  text:
+    "Hi, I am ArthSaathi. Ask me to log spends, check scams, find money leaks, or simulate future choices.",
+  timestamp: new Date().toISOString()
 };
 
 const quickPrompts = [
@@ -66,6 +88,19 @@ function formatTime(value?: string) {
   }).format(new Date(value));
 }
 
+function formatHistoryTime(value?: string) {
+  if (!value) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    hour: "numeric",
+    minute: "2-digit",
+    month: "short"
+  }).format(new Date(value));
+}
+
 function DataPreview({ data }: { data?: unknown }) {
   if (!data || typeof data !== "object") {
     return null;
@@ -94,18 +129,11 @@ function DataPreview({ data }: { data?: unknown }) {
 }
 
 export default function ChatPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      agent: "orchestrator",
-      intent: "welcome",
-      role: "agent",
-      text:
-        "Hi, I am ArthSaathi. Ask me to log spends, check scams, find money leaks, or simulate future choices.",
-      timestamp: new Date().toISOString()
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([welcomeMessage]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [input, setInput] = useState("");
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -114,6 +142,132 @@ export default function ChatPage() {
       containerRef.current.scrollTop = containerRef.current.scrollHeight;
     }
   }, [messages, isSending]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadConversations() {
+      setIsHistoryLoading(true);
+
+      try {
+        const res = await fetch("/api/chat", { cache: "no-store" });
+        const json = await res.json();
+
+        if (!isMounted) {
+          return;
+        }
+
+        if (json.error) {
+          setMessages([
+            {
+              role: "agent",
+              text: `Error: ${json.error}`,
+              timestamp: new Date().toISOString()
+            }
+          ]);
+          return;
+        }
+
+        const history: Conversation[] = json.conversations ?? [];
+        setConversations(history);
+
+        const storedId = window.localStorage.getItem(activeChatStorageKey);
+        const active =
+          history.find((conversation) => conversation.id === storedId) ??
+          history[0];
+
+        if (active) {
+          setConversationId(active.id);
+          setMessages(active.messages.length ? active.messages : [welcomeMessage]);
+          window.localStorage.setItem(activeChatStorageKey, active.id);
+        }
+      } catch {
+        if (isMounted) {
+          setMessages([
+            {
+              role: "agent",
+              text: "Could not load chat history. Please refresh once.",
+              timestamp: new Date().toISOString()
+            }
+          ]);
+        }
+      } finally {
+        if (isMounted) {
+          setIsHistoryLoading(false);
+        }
+      }
+    }
+
+    void loadConversations();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  function startNewChat() {
+    setConversationId(null);
+    setMessages([{ ...welcomeMessage, timestamp: new Date().toISOString() }]);
+    setInput("");
+    window.localStorage.removeItem(activeChatStorageKey);
+  }
+
+  function openConversation(conversation: Conversation) {
+    setConversationId(conversation.id);
+    setMessages(conversation.messages.length ? conversation.messages : [welcomeMessage]);
+    setInput("");
+    window.localStorage.setItem(activeChatStorageKey, conversation.id);
+  }
+
+  async function deleteConversation(conversation: Conversation) {
+    const confirmed = window.confirm("Delete this chat from history?");
+
+    if (!confirmed) {
+      return;
+    }
+
+    const previousConversations = conversations;
+    const remaining = conversations.filter((item) => item.id !== conversation.id);
+    setConversations(remaining);
+
+    if (conversationId === conversation.id) {
+      const nextConversation = remaining[0];
+      if (nextConversation) {
+        openConversation(nextConversation);
+      } else {
+        startNewChat();
+      }
+    }
+
+    try {
+      const res = await fetch(`/api/chat?id=${encodeURIComponent(conversation.id)}`, {
+        method: "DELETE"
+      });
+      const json = await res.json();
+
+      if (json.error) {
+        setConversations(previousConversations);
+        setMessages((current) => [
+          ...current,
+          {
+            role: "agent",
+            text: `Error: ${json.error}`,
+            timestamp: new Date().toISOString()
+          }
+        ]);
+      }
+    } catch {
+      setConversations(previousConversations);
+      setMessages((current) => [
+        ...current,
+        {
+          role: "agent",
+          text: "Could not delete this chat. Please try again.",
+          timestamp: new Date().toISOString()
+        }
+      ]);
+    }
+  }
 
   async function send(text = input) {
     const trimmed = text.trim();
@@ -151,9 +305,23 @@ export default function ChatPage() {
         return;
       }
 
-      setConversationId(json.conversationId);
+      const savedConversation: Conversation | null = json.conversation ?? null;
+      const savedConversationId = json.conversationId ?? savedConversation?.id;
 
-      if (json.agentResponse) {
+      if (savedConversationId) {
+        setConversationId(savedConversationId);
+        window.localStorage.setItem(activeChatStorageKey, savedConversationId);
+      }
+
+      if (savedConversation) {
+        setMessages(savedConversation.messages.length ? savedConversation.messages : [welcomeMessage]);
+        setConversations((current) => {
+          const withoutCurrent = current.filter(
+            (conversation) => conversation.id !== savedConversation.id
+          );
+          return [savedConversation, ...withoutCurrent];
+        });
+      } else if (json.agentResponse) {
         setMessages((current) => [
           ...current,
           {
@@ -208,33 +376,97 @@ export default function ChatPage() {
         </div>
       </header>
 
-      <section className="container grid min-h-0 flex-1 gap-4 py-3 sm:py-4 lg:grid-cols-[280px_1fr]">
-        <aside className="hidden rounded-lg border bg-white p-4 lg:block">
-          <div className="flex items-center gap-2">
-            <Bot className="size-5 text-slate-700" aria-hidden="true" />
-            <h2 className="font-semibold">Quick starts</h2>
+      <section className="container grid min-h-0 flex-1 gap-4 py-3 sm:py-4 lg:grid-cols-[320px_1fr]">
+        <aside className="rounded-lg border bg-white p-3 lg:p-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="size-5 text-slate-700" aria-hidden="true" />
+              <h2 className="font-semibold">Chats</h2>
+            </div>
+            <button
+              type="button"
+              onClick={startNewChat}
+              className="inline-flex h-9 items-center gap-2 rounded-md bg-slate-950 px-3 text-sm font-medium text-white"
+            >
+              <Plus className="size-4" aria-hidden="true" />
+              New
+            </button>
           </div>
-          <div className="mt-4 space-y-2">
-            {quickPrompts.map((prompt) => {
-              const Icon = prompt.icon;
+
+          <div className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1 lg:max-h-[34svh]">
+            {isHistoryLoading ? (
+              <div className="flex items-center gap-2 rounded-md border bg-background p-3 text-sm text-muted-foreground">
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                Loading chats
+              </div>
+            ) : null}
+
+            {!isHistoryLoading && conversations.length === 0 ? (
+              <div className="rounded-md border bg-background p-3 text-sm text-muted-foreground">
+                No previous chats yet.
+              </div>
+            ) : null}
+
+            {conversations.map((conversation) => {
+              const isActive = conversation.id === conversationId;
 
               return (
-                <button
-                  key={prompt.label}
-                  type="button"
-                  onClick={() => send(prompt.text)}
-                  className="w-full rounded-md border bg-background p-3 text-left transition-colors hover:bg-accent"
+                <div
+                  key={conversation.id}
+                  className={`group flex items-start gap-2 rounded-md border p-2 transition-colors ${
+                    isActive ? "border-slate-950 bg-slate-50" : "bg-background hover:bg-accent"
+                  }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <Icon className="size-4 text-emerald-700" aria-hidden="true" />
-                    <p className="text-sm font-semibold">{prompt.label}</p>
-                  </div>
-                  <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                    {prompt.text}
-                  </p>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => openConversation(conversation)}
+                    className="min-w-0 flex-1 text-left"
+                  >
+                    <p className="truncate text-sm font-semibold">{conversation.title}</p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      {formatHistoryTime(conversation.updatedAt)}
+                    </p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void deleteConversation(conversation)}
+                    className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-red-50 hover:text-red-700"
+                    aria-label={`Delete ${conversation.title}`}
+                  >
+                    <Trash2 className="size-4" aria-hidden="true" />
+                  </button>
+                </div>
               );
             })}
+          </div>
+
+          <div className="mt-5 hidden lg:block">
+            <div className="flex items-center gap-2">
+              <Bot className="size-5 text-slate-700" aria-hidden="true" />
+              <h2 className="font-semibold">Quick starts</h2>
+            </div>
+            <div className="mt-3 space-y-2">
+              {quickPrompts.map((prompt) => {
+                const Icon = prompt.icon;
+
+                return (
+                  <button
+                    key={prompt.label}
+                    type="button"
+                    onClick={() => send(prompt.text)}
+                    className="w-full rounded-md border bg-background p-3 text-left transition-colors hover:bg-accent"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Icon className="size-4 text-emerald-700" aria-hidden="true" />
+                      <p className="text-sm font-semibold">{prompt.label}</p>
+                    </div>
+                    <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                      {prompt.text}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </aside>
 

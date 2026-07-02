@@ -1,10 +1,18 @@
 import { detectIntent, Intent, isGreeting } from "./intents";
 import { AgentContext, AgentResponse } from "./types";
+import {
+  handleCompoundGoalPlanner,
+  isCompoundGoalPlanningRequest
+} from "./compoundGoalPlanner";
 
 export async function orchestrate(
   message: string,
   context: AgentContext = {}
 ): Promise<AgentResponse> {
+  if (isCompoundGoalPlanningRequest(message)) {
+    return handleCompoundGoalPlanner(message, context);
+  }
+
   const intent = detectIntent(message);
 
   switch (intent) {

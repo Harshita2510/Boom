@@ -22,13 +22,15 @@ export async function GET(request: Request) {
     );
   }
 
+  const selectedProvider: LLMProvider | undefined = provider && isProvider(provider) ? provider : undefined;
+
   const result = await generateLLMText({
     system: "You are a health check endpoint. Reply with a short plain text confirmation.",
     prompt: "Say: ok",
     temperature: 0,
     maxTokens: 64,
     timeoutMs: 8000,
-    provider: provider ?? undefined
+    provider: selectedProvider
   });
 
   return NextResponse.json({

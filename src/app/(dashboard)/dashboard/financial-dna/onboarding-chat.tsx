@@ -333,7 +333,7 @@ export function OnboardingChat({
     }
 
     if (typeof meta?.step === "number") {
-      return targetCopy.stepPrompts[meta.step] ?? targetCopy.welcomeMessage;
+      return targetCopy.stepPrompts[meta.step as keyof typeof targetCopy.stepPrompts] ?? targetCopy.welcomeMessage;
     }
 
     return targetCopy.welcomeMessage;
